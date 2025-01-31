@@ -20,10 +20,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+// Ruta pública para comprobar que la API funciona
 Route::get('/test', function (){
     return response()->json(['message' => 'API is working!']);
 });
 
+// Registro de usuarios
 Route::post('/register', function (Request $request) {
     $request->validate([
         'name' => 'required|string|max:255',
@@ -37,9 +39,10 @@ Route::post('/register', function (Request $request) {
         'password' => Hash::make($request->password),
     ]);
 
-    return response()->json(['message' => 'User registered successfully']);
+    return response()->json(['message' => 'User registered successfully'], 201);
 });
 
+// Inicio de sesión y obtención de token
 Route::post('/login', function (Request $request) {
     $request->validate([
         'email' => 'required|string|email',
@@ -49,13 +52,41 @@ Route::post('/login', function (Request $request) {
     $user = User::where('email', $request->email)->first();
 
     if (!$user || !Hash::check($request->password, $user->password)) {
-        throw ValidationException::withMessages([
-            'email' => ['The provided credentials are incorrect.'],
-        ]);
+        return response()->json(['error' => 'Invalid credentials'], 401);
     }
 
     return response()->json([
         'token' => $user->createToken('auth_token')->plainTextToken,
         'token_type' => 'Bearer',
     ]);
+});
+
+// Ruta para obtener el usuario autenticado
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return response()->json(['user' => $request->user()]);
+});
+
+/** Route::middleware(['auth:sanctum', 'role:admin'])->get('/admin-dashboard', function (Request $request) {
+*    return response()->json([
+*        'message' => 'Bienvenido Admin',
+*        'roles' => $request->user()->getRoleNames()
+*    ]);
+* });
+*/
+
+// Ruta de logout con manejo de error si no hay token
+Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
+    if (!$request->user()) {
+        return response()->json(['message' => 'No user authenticated'], 401);
+    }
+
+    $request->user()->tokens()->delete();
+    return response()->json(['message' => 'Logged out']);
+});
+
+// Ruta protegida para administradores con manejo de errores
+Route::middleware(['auth:sanctum', 'role:admin'])->get('/admin-dashboard', function (Request $request) {
+    return response()->json(['message' => 'Bienvenido Admin']);
+})->fallback(function () {
+    return response()->json(['message' => 'Forbidden'], 403);
 });

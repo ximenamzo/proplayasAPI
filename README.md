@@ -42,3 +42,19 @@ docker-compose build app
 docker-compose up -d  # Levantar la API
 docker exec -it proplayas_php bash  # Acceder al contenedor
 php artisan migrate  # Ejecutar migraciones
+
+
+
+## Probar API
+
+curl -X POST "http://localhost:8080/api/register" \
+     -H "Content-Type: application/json" \
+     -d '{"name":"Ximena", "email":"xime@example.com", "password":"12345678"}'
+
+curl -X POST "http://localhost:8080/api/login" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"xime@example.com", "password":"12345678"}'
+
+curl -X GET "http://localhost:8080/api/admin-dashboard" \
+     -H "Authorization: Bearer TU_TOKEN_AQUI"
+
