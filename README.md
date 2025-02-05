@@ -79,7 +79,7 @@ $ php artisan cache:clear
 $ php artisan config:clear
 $ php artisan route:clear
 $ docker-compose restart app
-``` \
+```
 
 📌 Después de esto, podrán probar la API en http://localhost:8080/api/test y hacer login. 🎯
 
