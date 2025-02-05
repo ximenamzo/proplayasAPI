@@ -36,12 +36,52 @@ $ docker exec -it proplayas_php bash \
 
 ## Instrucciones para instalar en otra máquina
 
-git clone <THIS_REPO_URL> \
-cd proplayasAPI \
-docker-compose build app  \
-docker-compose up -d  # Levantar la API \
-docker exec -it proplayas_php bash  # Acceder al contenedor \
-php artisan migrate  # Ejecutar migraciones
+1️⃣ Clonar el repositorio
+```bash
+$ git clone THIS_REPO_GITHUB.git
+$ cd proplayasAPI
+```
+
+2️⃣ Levantar el entorno con Docker
+```bash
+$ docker-compose up -d
+``` 
+
+3️⃣ Acceder al contenedor PHP
+```bash
+$ docker exec -it proplayas_php bash
+``` 
+
+4️⃣ Instalar las dependencias de Laravel
+```bash
+$ composer install
+``` 
+
+5️⃣ Copiar el archivo de configuración .env
+```bash
+$ cp .env.example .env
+```
+
+6️⃣ Generar la clave de Laravel
+```bash
+$ php artisan key:generate
+``` 
+
+7️⃣ Ejecutar las migraciones y poblar la base de datos
+```bash
+$ php artisan migrate --seed
+```
+
+
+8️⃣ Limpiar cachés y reiniciar Laravel (opcional, si ven errores)
+```bash
+$ php artisan cache:clear
+$ php artisan config:clear
+$ php artisan route:clear
+$ docker-compose restart app
+``` \
+
+📌 Después de esto, podrán probar la API en http://localhost:8080/api/test y hacer login. 🎯
 
 
 
