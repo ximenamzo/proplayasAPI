@@ -3,35 +3,38 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Model;
 
 class Node extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasFactory;
 
     protected $fillable = [
-        'type',
+        'leader_id',
         'code',
+        'type',
         'name',
+        'profile_picture',
         'country',
         'city',
+        'coordinates',
+        'alt_places',
         'joined_in',
         'members_count',
-        'leader_name',
-        'email',
-        'password',
+        'id_photo',
+        'node_email',
         'website',
-        'activity_level',
-        'memorandum'
+        'facebook',
+        'instagram',
+        'youtube',
+        'memorandum',
+        'status',
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    public function leader()
+    {
+        return $this->belongsTo(User::class, 'leader_id');
+    }
 
     public function members()
     {

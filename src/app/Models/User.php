@@ -22,6 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'status',
     ];
 
     /**
@@ -43,4 +45,78 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+    
+    /**
+     * Relación: Un usuario puede ser líder de un nodo.
+     */
+    public function node()
+    {
+        return $this->hasOne(Node::class, 'leader_id');
+    }
+
+    /**
+     * Relación: Un usuario puede ser miembro de un nodo.
+     */
+    public function member()
+    {
+        return $this->hasOne(Member::class, 'user_id');
+    }
+
+    /**
+     * Relación: Un usuario puede crear muchas publicaciones.
+     */
+    public function publications()
+    {
+        return $this->hasMany(Publication::class, 'author_id');
+    }
+
+    /**
+     * Relación: Un usuario puede crear muchos libros.
+     */
+    public function books()
+    {
+        return $this->hasMany(Book::class, 'author_id');
+    }
+
+    /**
+     * Relación: Un usuario puede crear muchas series.
+     */
+    public function series()
+    {
+        return $this->hasMany(Series::class, 'author_id');
+    }
+
+    /**
+     * Relación: Un usuario puede crear muchos webinars.
+     */
+    public function webinars()
+    {
+        return $this->hasMany(Webinar::class, 'author_id');
+    }
+
+    /**
+     * Relación: Un usuario puede crear muchos posts de noticias.
+     */
+    public function newsPosts()
+    {
+        return $this->hasMany(NewsPost::class, 'author_id');
+    }
+
+    /**
+     * Validar si un usuario tiene un rol específico.
+     */
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isNodeLeader()
+    {
+        return $this->role === 'node_leader';
+    }
+
+    public function isMember()
+    {
+        return $this->role === 'member';
+    }
 }

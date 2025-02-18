@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('members', function (Blueprint $table) {
+        Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('node_id')->constrained('nodes')->onDelete('cascade');
-            $table->string('member_code')->unique();
             $table->string('name');
             $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('research_line', ['gestión de playas', 'certificación de playas', 'ambas']);
-            $table->string('work_area')->nullable();
+            $table->enum('role', ['admin', 'node_leader', 'member']);
+            $table->enum('status', ['activo', 'inactivo'])->default('activo');
+            $table->rememberToken();
             $table->timestamps();
         });
     }
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('members');
+        Schema::dropIfExists('users');
     }
 };

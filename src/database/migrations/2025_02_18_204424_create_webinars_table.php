@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('webinars', function (Blueprint $table) {
             $table->id();
-            $table->string('title', 150);
+            $table->string('title');
             $table->text('description');
-            $table->enum('creator_type', ['admin', 'nodo', 'miembro']);
-            $table->integer('creator_id');
+            $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
             $table->dateTime('date');
             $table->string('link');
             $table->enum('format', ['presencial', 'online']);
             $table->string('location')->nullable();
+            $table->enum('status', ['publico', 'archivado'])->default('publico');
             $table->timestamps();
         });
     }

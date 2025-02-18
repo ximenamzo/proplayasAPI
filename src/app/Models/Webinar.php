@@ -12,11 +12,16 @@ class Webinar extends Model
     protected $fillable = [
         'title',
         'description',
-        'creator_type',
-        'creator_id',
+        'author_id',
         'date',
         'link',
         'format',
-        'location'
+        'location',
+        'status',
     ];
+
+    public function author()
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
 }

@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('series', function (Blueprint $table) {
             $table->id();
-            $table->string('title', 150);
-            $table->text('iframe_code');
-            $table->enum('creator_type', ['admin', 'nodo', 'miembro']);
-            $table->integer('creator_id');
+            $table->string('title');
+            $table->string('url');
+            $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
+            $table->enum('status', ['publico', 'archivado'])->default('publico');
             $table->timestamps();
         });
     }

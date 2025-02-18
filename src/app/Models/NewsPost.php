@@ -10,14 +10,19 @@ class NewsPost extends Model
     use HasFactory;
 
     protected $fillable = [
+        'author_id',
         'title',
         'content',
-        'creator_type',
-        'creator_id',
         'post_date',
         'category',
         'tags',
         'image',
-        'link'
+        'link',
+        'status',
     ];
+
+    public function author()
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
 }

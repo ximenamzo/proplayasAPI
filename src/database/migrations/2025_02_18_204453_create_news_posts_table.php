@@ -11,17 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('new_posts', function (Blueprint $table) {
+        Schema::create('news_posts', function (Blueprint $table) {
             $table->id();
-            $table->string('title', 150);
+            $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
+            $table->string('title');
             $table->text('content');
-            $table->enum('creator_type', ['admin', 'nodo', 'miembro']);
-            $table->integer('creator_id');
             $table->timestamp('post_date');
             $table->string('category');
             $table->text('tags')->nullable();
             $table->string('image')->nullable();
             $table->string('link')->nullable();
+            $table->enum('status', ['publico', 'archivado'])->default('publico');
             $table->timestamps();
         });
     }
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('new_posts');
+        Schema::dropIfExists('news_posts');
     }
 };

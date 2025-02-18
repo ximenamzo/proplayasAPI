@@ -18,7 +18,12 @@ class Book extends Model
         'link',
         'file_path',
         'cover_image',
-        'creator_type',
-        'creator_id'
+        'author_id',
+        'status',
     ];
+
+    public function author()
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
 }

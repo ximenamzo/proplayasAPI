@@ -11,18 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('books', function (Blueprint $table) {
+        Schema::create('publications', function (Blueprint $table) {
             $table->id();
-            $table->string('title', 150);
-            $table->string('author');
-            $table->date('publication_date')->nullable();
-            $table->string('isbn')->nullable();
+            $table->enum('type', ['boletin', 'guia', 'articulo']);
+            $table->string('title');
             $table->text('description');
             $table->string('link')->nullable();
+            $table->string('doi')->nullable();
+            $table->string('issn')->nullable();
             $table->string('file_path')->nullable();
             $table->string('cover_image')->nullable();
-            $table->enum('creator_type', ['admin', 'nodo', 'miembro']);
-            $table->integer('creator_id');
+            $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
+            $table->enum('status', ['publico', 'archivado'])->default('publico');
             $table->timestamps();
         });
     }
@@ -32,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('books');
+        Schema::dropIfExists('publications');
     }
 };

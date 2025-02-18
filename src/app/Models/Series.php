@@ -11,8 +11,13 @@ class Series extends Model
 
     protected $fillable = [
         'title',
-        'iframe_code',
-        'creator_type',
-        'creator_id'
+        'url',
+        'author_id',
+        'status',
     ];
+
+    public function author()
+    {
+        return $this->belongsTo(User::class, 'author_id');
+    }
 }

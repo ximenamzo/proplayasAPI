@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('invitations', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
             $table->string('email');
             $table->enum('role_type', ['nodo', 'miembro']);
+            $table->enum('node_type', ['sociedad_civil', 'empresarial', 'cientifico', 'funcion_publica', 'individual'])->nullable();
             $table->foreignId('node_id')->nullable()->constrained('nodes')->onDelete('cascade');
-            $table->string('reserved_code')->unique();
             $table->enum('status', ['pendiente', 'aceptada', 'expirada'])->default('pendiente');
             $table->timestamp('sent_date');
             $table->timestamp('accepted_date')->nullable();
-            $table->timestamp('expired_date')->nullable();
+            $table->timestamp('expiration_date')->nullable();
             $table->timestamps();
         });
     }
