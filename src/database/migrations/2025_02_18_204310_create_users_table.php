@@ -18,6 +18,13 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->enum('role', ['admin', 'node_leader', 'member']);
+            $table->text('about')->nullable();
+            $table->string('degree')->nullable();
+            $table->string('postgraduate')->nullable();
+            $table->string('expertise_area')->nullable();
+            $table->string('research_work')->nullable();
+            $table->string('profile_picture')->nullable();
+            $table->json('social_media')->nullable();
             $table->enum('status', ['activo', 'inactivo'])->default('activo');
             $table->rememberToken();
             $table->timestamps();

@@ -5,30 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Member extends Authenticatable
+class Member extends Model
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-        'node_id',
-        'member_code',
-        'role',
-        'degree',
-        'postgraduate',
-        'expertise_area',
-        'research_work',
-        'profile_picture',
-        'whatsapp',
-        'skype',
-        'website',
-        'facebook',
-        'instagram',
-        'youtube',
-        'linkedin',
-        'researchgate',
-        'status',
-    ];
+    protected $fillable = ['user_id', 'node_id', 'member_code', 'status'];
 
     /**
      * Relación: Un miembro pertenece a un usuario.

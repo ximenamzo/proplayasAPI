@@ -23,6 +23,13 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'about',
+        'degree',
+        'postgraduate',
+        'expertise_area',
+        'research_work',
+        'profile_picture',
+        'social_media',
         'status',
     ];
 
@@ -31,10 +38,7 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token',];
 
     /**
      * The attributes that should be cast.
@@ -44,10 +48,11 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'social_media' => 'array', // Para manejar JSON
     ];
     
     /**
-     * Relación: Un usuario puede ser líder de un nodo.
+     * Relación: Un usuario puede ser líder de un solo nodo.
      */
     public function node()
     {
@@ -55,7 +60,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Relación: Un usuario puede ser miembro de un nodo.
+     * Relación: Un usuario puede ser miembro de UN solo nodo 
+     * a la vez (a través de la tabla members).
      */
     public function member()
     {

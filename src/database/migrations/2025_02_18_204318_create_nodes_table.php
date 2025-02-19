@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('type', ['sociedad_civil', 'empresarial', 'cientifico', 'funcion_publica', 'individual']);
             $table->string('name');
             $table->string('profile_picture')->nullable();
+            $table->text('about')->nullable();
             $table->string('country');
             $table->string('city');
             $table->string('coordinates')->nullable();
@@ -25,11 +26,7 @@ return new class extends Migration
             $table->year('joined_in');
             $table->integer('members_count')->nullable();
             $table->string('id_photo')->nullable();
-            $table->string('node_email')->nullable();
-            $table->string('website')->nullable();
-            $table->string('facebook')->nullable();
-            $table->string('instagram')->nullable();
-            $table->string('youtube')->nullable();
+            $table->json('social_media')->nullable();
             $table->string('memorandum')->nullable();
             $table->enum('status', ['activo', 'inactivo'])->default('activo');
             $table->timestamps();
