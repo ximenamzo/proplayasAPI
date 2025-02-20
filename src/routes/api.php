@@ -1,10 +1,13 @@
 <?php
 
+use App\Models\User;
+use App\Http\Controllers\HomepageContentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Models\Role;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,14 +38,27 @@ Route::post('/register', function (Request $request) {
         'role' => 'required|in:admin,node_leader,member',
     ]);
 
+    // Crear un usuario
     $user = User::create([
         'name' => $request->name,
         'email' => $request->email,
         'password' => Hash::make($request->password),
         'role' => $request->role,
+        'status' => 'activo',
     ]);
 
-    return response()->json(['message' => 'User registered successfully'], 201);
+    // Verificar si el rol existe en la BD y asignarlo
+    $role = Role::where('name', $request->role)->first();
+    if ($role) {
+        $user->assignRole($role);
+    } else {
+        return response()->json(['error' => 'Role not found'], 404);
+    }
+
+    return response()->json([
+        'message' => 'User registered successfully',
+        'user' => $user,
+    ], 201);
 });
 
 // Inicio de sesión con autenticación y roles
@@ -71,6 +87,7 @@ Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
     return response()->json(['message' => 'Logged out']);
 });
 
+
 // Dashboard de administrador (solo admins pueden acceder)
 Route::middleware(['auth:sanctum'])->get('/admin-dashboard', function (Request $request) {
     if (!$request->user()->isAdmin()) {
@@ -94,3 +111,31 @@ Route::middleware(['auth:sanctum'])->get('/member-dashboard', function (Request 
     }
     return response()->json(['message' => 'Bienvenido Miembro']);
 });
+
+/**
+ * HOMEPAGE CONTENT
+ * Grupo de rutas protegidas para Admin
+ */
+/*Route::middleware(['auth:sanctum', RoleMiddleware::class . ':admin'])->group(function () {
+    Route::get('/homepage-content', [HomepageContentController::class, 'index']);
+    Route::get('/homepage-content/{id}', [HomepageContentController::class, 'show']);
+    Route::post('/homepage-content', [HomepageContentController::class, 'store']);
+    Route::put('/homepage-content/{id}', [HomepageContentController::class, 'update']);
+    Route::delete('/homepage-content/{id}', [HomepageContentController::class, 'destroy']);
+});*/
+
+// Ruta que si funciona:
+/*Route::middleware(['auth:sanctum', 'role:admin'])->post('/homepage-content', function (Request $request) {
+    return response()->json(['message' => 'Contenido actualizado']);
+});*/
+Route::middleware(['auth:sanctum', 'role:admin'])
+     ->get('/homepage-content', [HomepageContentController::class, 'index']);
+Route::middleware(['auth:sanctum', 'role:admin'])
+     ->get('/homepage-content/{id}', [HomepageContentController::class, 'show']);
+Route::middleware(['auth:sanctum', 'role:admin'])
+     ->post('/homepage-content', [HomepageContentController::class, 'store']);
+Route::middleware(['auth:sanctum', 'role:admin'])
+     ->put('/homepage-content/{id}', [HomepageContentController::class, 'update']);
+Route::middleware(['auth:sanctum', 'role:admin'])
+     ->delete('/homepage-content/{id}', [HomepageContentController::class, 'destroy']);
+

@@ -35,4 +35,9 @@ services:
       MYSQL_DATABASE: proplayas
       MYSQL_USER: proplayas_user
       MYSQL_PASSWORD: password
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes: 
+    db_data:
 
