@@ -11,24 +11,30 @@ use Spatie\Permission\Models\Role;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| 💠 API Routes
 |--------------------------------------------------------------------------
 |
 | Here is where you can register API routes for your application. These
 | routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
+| be assigned to the "api" middleware group.
 |
+| Aquí se regisran todas las rutas de la API. Están organizadas en
+| secciones con comentarios para facilitar la navegación y mantenimiento.
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return response()->json($request->user());
-});
+//Route::middleware('auth:sanctum')->get('/user', function (Request $request) {return response()->json($request->user());});
 
 // Ruta pública para comprobar que la API funciona
 Route::get('/test', function (){
     return response()->json(['message' => 'API is working!']);
 });
 
+
+/**-------------------------------------------------------------------------
+ * 🔹 AUTENTICACIÓN (REGISTER, LOGIN, LOGOUT)
+ * Rutas para el registro de usuarios, inicio de sesión y cierre de sesión.
+ * -------------------------------------------------------------------------
+ */
 // Registro de usuarios con asignación del rol
 Route::post('/register', function (Request $request) {
     $request->validate([
@@ -88,54 +94,69 @@ Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
 });
 
 
+/**----------------------------------------------------------------
+ * 🔸 DASHBOARDS (PROTEGIDOS POR ROL)
+ * Paneles específicos según el rol del usuario.
+ * ----------------------------------------------------------------
+ */
 // Dashboard de administrador (solo admins pueden acceder)
-Route::middleware(['auth:sanctum'])->get('/admin-dashboard', function (Request $request) {
-    if (!$request->user()->isAdmin()) {
-        return response()->json(['message' => 'Unauthorized'], 403);
-    }
-    return response()->json(['message' => 'Bienvenido Admin']);
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/admin-dashboard', function (Request $request) {
+        if (!$request->user()->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        return response()->json(['message' => 'Bienvenido Admin']);
+    });
+
+    Route::get('/node-dashboard', function (Request $request) {
+        if (!$request->user()->isNodeLeader()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        return response()->json(['message' => 'Bienvenido Líder de Nodo']);
+    });
+
+    Route::get('/member-dashboard', function (Request $request) {
+        if (!$request->user()->isMember()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        return response()->json(['message' => 'Bienvenido Miembro']);
+    });
 });
 
-// Dashboard de líderes de nodo (solo node_leader puede acceder)
-Route::middleware(['auth:sanctum'])->get('/node-dashboard', function (Request $request) {
-    if (!$request->user()->isNodeLeader()) {
-        return response()->json(['message' => 'Unauthorized'], 403);
-    }
-    return response()->json(['message' => 'Bienvenido Líder de Nodo']);
+/**--------------------------------------------------------------------
+ * 🔹 CRUD: HOMEPAGE CONTENT (SOLO PARA ADMIN)
+ * --------------------------------------------------------------------
+ */
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('homepage-content')->group(function () {
+    Route::get('/', [HomepageContentController::class, 'index']);
+    Route::get('/{id}', [HomepageContentController::class, 'show']);
+    Route::post('/', [HomepageContentController::class, 'store']);
+    Route::put('/{id}', [HomepageContentController::class, 'update']);
+    Route::delete('/{id}', [HomepageContentController::class, 'destroy']);
 });
 
-// Dashboard de miembros (solo miembros pueden acceder)
-Route::middleware(['auth:sanctum'])->get('/member-dashboard', function (Request $request) {
-    if (!$request->user()->isMember()) {
-        return response()->json(['message' => 'Unauthorized'], 403);
-    }
-    return response()->json(['message' => 'Bienvenido Miembro']);
-});
 
 /**
- * HOMEPAGE CONTENT
- * Grupo de rutas protegidas para Admin
+ * 🔹 CRUD: NODOS
+ * Aquí van las rutas para gestionar los nodos (acceso según rol).
  */
-/*Route::middleware(['auth:sanctum', RoleMiddleware::class . ':admin'])->group(function () {
-    Route::get('/homepage-content', [HomepageContentController::class, 'index']);
-    Route::get('/homepage-content/{id}', [HomepageContentController::class, 'show']);
-    Route::post('/homepage-content', [HomepageContentController::class, 'store']);
-    Route::put('/homepage-content/{id}', [HomepageContentController::class, 'update']);
-    Route::delete('/homepage-content/{id}', [HomepageContentController::class, 'destroy']);
-});*/
 
-// Ruta que si funciona:
-/*Route::middleware(['auth:sanctum', 'role:admin'])->post('/homepage-content', function (Request $request) {
-    return response()->json(['message' => 'Contenido actualizado']);
-});*/
-Route::middleware(['auth:sanctum', 'role:admin'])
-     ->get('/homepage-content', [HomepageContentController::class, 'index']);
-Route::middleware(['auth:sanctum', 'role:admin'])
-     ->get('/homepage-content/{id}', [HomepageContentController::class, 'show']);
-Route::middleware(['auth:sanctum', 'role:admin'])
-     ->post('/homepage-content', [HomepageContentController::class, 'store']);
-Route::middleware(['auth:sanctum', 'role:admin'])
-     ->put('/homepage-content/{id}', [HomepageContentController::class, 'update']);
-Route::middleware(['auth:sanctum', 'role:admin'])
-     ->delete('/homepage-content/{id}', [HomepageContentController::class, 'destroy']);
+/**
+ * 🔹 CRUD: MIEMBROS
+ * Aquí van las rutas para gestionar los miembros de nodos.
+ */
 
+/**
+ * 🔹 CRUD: INVITACIONES
+ * Aquí van las rutas para manejar invitaciones a nodos y miembros.
+ */
+
+/**
+ * 🔹 CRUD: COLABORADORES
+ * Aquí van las rutas para gestionar colaboradores y suscripciones a boletines.
+ */
+
+/**
+ * 🔹 CRUD: PUBLICACIONES (LIBROS, ARTÍCULOS, WEBSERIES, NEWS, WEBINARS)
+ * Aquí van las rutas para manejar contenido publicado en la plataforma.
+ */
