@@ -26,8 +26,11 @@ use Spatie\Permission\Models\Role;
 //Route::middleware('auth:sanctum')->get('/user', function (Request $request) {return response()->json($request->user());});
 
 // Ruta pública para comprobar que la API funciona
-Route::get('/test', function (){
-    return response()->json(['message' => 'API is working!']);
+Route::get('/test', function () {
+    return response()->json([
+        'status' => 200, 
+        'message' => 'API is working!'
+    ], 200);
 });
 
 
@@ -45,7 +48,6 @@ Route::post('/register', function (Request $request) {
         'role' => 'required|in:admin,node_leader,member',
     ]);
 
-    // Crear un usuario
     $user = User::create([
         'name' => $request->name,
         'email' => $request->email,
@@ -59,16 +61,20 @@ Route::post('/register', function (Request $request) {
     if ($role) {
         $user->assignRole($role);
     } else {
-        return response()->json(['error' => 'Role not found'], 404);
+        return response()->json([
+            'status' => 400, 
+            'error' => 'Role not found'
+        ], 400);
     }
 
     return response()->json([
-        'message' => 'User registered successfully',
-        'user' => $user,
+        'status' => 201, 
+        'message' => 'User registered successfully', 
+        'data' => $user
     ], 201);
 });
 
-// Inicio de sesión con autenticación y roles
+// 🔹 Inicio de sesión con autenticación y roles
 Route::post('/login', function (Request $request) {
     $request->validate([
         'email' => 'required|string|email',
@@ -78,20 +84,30 @@ Route::post('/login', function (Request $request) {
     $user = User::where('email', $request->email)->first();
 
     if (!$user || !Hash::check($request->password, $user->password)) {
-        return response()->json(['error' => 'Invalid credentials'], 401);
+        return response()->json([
+            'status' => 401,
+            'error' => 'Invalid credentials'
+        ], 401);
     }
 
     return response()->json([
-        'token' => $user->createToken('auth_token')->plainTextToken,
-        'token_type' => 'Bearer',
-        'role' => $user->role,
-    ]);
+        'status' => 200,
+        'message' => 'Login successful',
+        'data' => [
+            'token' => $user->createToken('auth_token')->plainTextToken,
+            'role' => $user->role
+        ]
+    ], 200);
 });
 
 // Logout
 Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
     $request->user()->tokens()->delete();
-    return response()->json(['message' => 'Logged out']);
+    
+    return response()->json([
+        'status' => 200, 
+        'message' => 'Logged out successfully'
+    ], 200);
 });
 
 
@@ -100,27 +116,42 @@ Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
  * Paneles específicos según el rol del usuario.
  * ----------------------------------------------------------------
  */
-// Dashboard de administrador (solo admins pueden acceder)
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin-dashboard', function (Request $request) {
-        if (!$request->user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-        return response()->json(['message' => 'Bienvenido Admin']);
+        return $request->user()->isAdmin()
+            ? response()->json([
+                'status' => 200, 
+                'message' => 'Bienvenido Admin'
+                ])
+            : response()->json([
+                'status' => 403, 
+                'error' => 
+                'Unauthorized'
+            ], 403);
     });
 
     Route::get('/node-dashboard', function (Request $request) {
-        if (!$request->user()->isNodeLeader()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-        return response()->json(['message' => 'Bienvenido Líder de Nodo']);
+        return $request->user()->isNodeLeader()
+            ? response()->json([
+                'status' => 200, 
+                'message' => 'Bienvenido Líder de Nodo'
+                ])
+            : response()->json([
+                'status' => 403, 
+                'error' => 'Unauthorized'
+            ], 403);
     });
 
     Route::get('/member-dashboard', function (Request $request) {
-        if (!$request->user()->isMember()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-        return response()->json(['message' => 'Bienvenido Miembro']);
+        return $request->user()->isMember()
+            ? response()->json([
+                'status' => 200, 
+                'message' => 'Bienvenido Miembro'
+                ])
+            : response()->json([
+                'status' => 403, 
+                'error' => 'Unauthorized'
+            ], 403);
     });
 });
 
@@ -164,6 +195,7 @@ Route::prefix('collaborators')->group(function () {
     // Unsubscribirse de boletines (PÚBLICO)
     Route::post('/unsubscribe', [CollaboratorController::class, 'unsubscribe']);
 
+    
     // ADMIN: Ver todos los colaboradores
     Route::middleware(['auth:sanctum', 'role:admin'])->get('/', [CollaboratorController::class, 'index']);
 
