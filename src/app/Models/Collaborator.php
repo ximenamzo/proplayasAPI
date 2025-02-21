@@ -16,4 +16,9 @@ class Collaborator extends Model
         'subscription_status',
         'status',
     ];
+
+    protected $casts = [
+        'subscription_status' => 'boolean',
+        'status' => 'string',
+    ];
 }

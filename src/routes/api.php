@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Http\Controllers\CollaboratorController;
 use App\Http\Controllers\HomepageContentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -151,10 +152,27 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('homepage-content')->g
  * Aquí van las rutas para manejar invitaciones a nodos y miembros.
  */
 
-/**
+/**----------------------------------------------------------------------------
  * 🔹 CRUD: COLABORADORES
  * Aquí van las rutas para gestionar colaboradores y suscripciones a boletines.
+ * ----------------------------------------------------------------------------
  */
+Route::prefix('collaborators')->group(function () {
+    // Registrar un nuevo colaborador (PÚBLICO)
+    Route::post('/', [CollaboratorController::class, 'store']);
+
+    // Unsubscribirse de boletines (PÚBLICO)
+    Route::post('/unsubscribe', [CollaboratorController::class, 'unsubscribe']);
+
+    // ADMIN: Ver todos los colaboradores
+    Route::middleware(['auth:sanctum', 'role:admin'])->get('/', [CollaboratorController::class, 'index']);
+
+    // ADMIN: Actualizar estado o suscripción de un colaborador
+    Route::middleware(['auth:sanctum', 'role:admin'])->put('/{id}', [CollaboratorController::class, 'update']);
+
+    // ADMIN: Desactivar colaborador (soft delete)
+    Route::middleware(['auth:sanctum', 'role:admin'])->delete('/{id}', [CollaboratorController::class, 'destroy']);
+});
 
 /**
  * 🔹 CRUD: PUBLICACIONES (LIBROS, ARTÍCULOS, WEBSERIES, NEWS, WEBINARS)
