@@ -1,11 +1,13 @@
 <?php
 
 use App\Models\User;
+use App\Helpers\JWTHandler;
 use App\Http\Controllers\CollaboratorController;
 use App\Http\Controllers\HomepageContentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Models\Role;
@@ -48,10 +50,14 @@ Route::post('/register', function (Request $request) {
         'role' => 'required|in:admin,node_leader,member',
     ]);
 
+    // Decodificar la contraseña base64
+    $decodedPassword = base64_decode($request->password);
+
+    // Crear usuario con contraseña hasheada
     $user = User::create([
         'name' => $request->name,
         'email' => $request->email,
-        'password' => Hash::make($request->password),
+        'password' => Hash::make($decodedPassword),
         'role' => $request->role,
         'status' => 'activo',
     ]);
@@ -83,7 +89,10 @@ Route::post('/login', function (Request $request) {
 
     $user = User::where('email', $request->email)->first();
 
-    if (!$user || !Hash::check($request->password, $user->password)) {
+    // Decodificar la contraseña base64 antes de validarla
+    $decodedPassword = base64_decode($request->password);
+
+    if (!$user || !Hash::check($decodedPassword, $user->password)) {
         return response()->json([
             'status' => 401,
             'error' => 'Invalid credentials'
@@ -94,7 +103,8 @@ Route::post('/login', function (Request $request) {
         'status' => 200,
         'message' => 'Login successful',
         'data' => [
-            'token' => $user->createToken('auth_token')->plainTextToken,
+            //'token' => $user->createToken('auth_token')->plainTextToken,
+            'token' => JWTHandler::createToken($user),
             'role' => $user->role
         ]
     ], 200);
