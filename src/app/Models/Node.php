@@ -18,6 +18,7 @@ class Node extends Model
         'about',
         'country',
         'city',
+        'ip_address',
         'coordinates',
         'alt_places',
         'joined_in',

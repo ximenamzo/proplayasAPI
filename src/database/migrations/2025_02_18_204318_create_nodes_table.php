@@ -21,6 +21,7 @@ return new class extends Migration
             $table->text('about')->nullable();
             $table->string('country');
             $table->string('city');
+            $table->string('ip_address')->nullable();
             $table->string('coordinates')->nullable();
             $table->text('alt_places')->nullable();
             $table->year('joined_in');
