@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Helpers\JWTHandler;
 use App\Http\Controllers\CollaboratorController;
 use App\Http\Controllers\HomepageContentController;
+use App\Http\Middleware\JWTMiddleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Hash;
@@ -111,9 +112,8 @@ Route::post('/login', function (Request $request) {
 });
 
 // Logout
-Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
-    $request->user()->tokens()->delete();
-    
+Route::middleware(['jwt.auth'])->post('/logout', function (Request $request) {
+    //$request->user()->tokens()->delete();
     return response()->json([
         'status' => 200, 
         'message' => 'Logged out successfully'
@@ -126,9 +126,9 @@ Route::middleware('auth:sanctum')->post('/logout', function (Request $request) {
  * Paneles específicos según el rol del usuario.
  * ----------------------------------------------------------------
  */
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('jwt.auth')->group(function () {
     Route::get('/admin-dashboard', function (Request $request) {
-        return $request->user()->isAdmin()
+        return $request->user->role === 'admin'
             ? response()->json([
                 'status' => 200, 
                 'message' => 'Bienvenido Admin'
@@ -141,7 +141,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/node-dashboard', function (Request $request) {
-        return $request->user()->isNodeLeader()
+        return $request->user->role === 'node_leader'
             ? response()->json([
                 'status' => 200, 
                 'message' => 'Bienvenido Líder de Nodo'
@@ -153,7 +153,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/member-dashboard', function (Request $request) {
-        return $request->user()->isMember()
+        return $request->user->role === 'member'
             ? response()->json([
                 'status' => 200, 
                 'message' => 'Bienvenido Miembro'
