@@ -10,7 +10,8 @@ class HomepageContentController extends Controller
     public function __construct()
     {
         // Solo los admins pueden modificar el contenido
-        $this->middleware(['auth:sanctum', 'role:admin'])->except(['index', 'show']);
+        //$this->middleware(['auth:sanctum', 'role:admin'])->except(['index', 'show']);
+        $this->middleware(['jwt.auth'])->except(['index', 'show']);
     }
 
     /**
@@ -44,28 +45,37 @@ class HomepageContentController extends Controller
 }
 
     /**
-     * 🟡 Crear una nueva sección en el homepage.
+     * 🟡 Crear una nueva sección en el homepage. ADMIN
      */
     public function store(Request $request)
     {
-        $request->validate([
+        if ($request->user->role !== 'admin') {
+            return response()->json([
+                'status' => 403,
+                'error' => 'Unauthorized'
+            ], 403);
+        }
+
+        $validated = $request->validate([
             'section_name' => 'required|string|max:255|unique:homepage_content',
             'content' => 'required|string',
         ]);
 
+        $section = HomePageContent::create($validated);
+
         return response()->json([
             'status' => 201, 
             'message' => 'Sección creada', 
-            'data' => HomepageContent::create($request->all())
+            'data' => $section
         ], 201);
     }
 
     /**
-     * 🟠 Actualizar una sección del homepage.
+     * 🟠 Actualizar una sección del homepage. ADMIN
      */
     public function update(Request $request, $id)
     {
-        $section = HomepageContent::find($id);
+        $section = HomePageContent::find($id);
     
         if (!$section) {
             return response()->json([
@@ -73,13 +83,20 @@ class HomepageContentController extends Controller
                 'error' => 'Sección no encontrada'
             ], 404);
         }
+
+        if ($request->user->role !== 'admin') {
+            return response()->json([
+                'status' => 403,
+                'error' => 'Unauthorized'
+            ], 403);
+        }
     
-        $request->validate([
+        $validated = $request->validate([
             'section_name' => 'string|max:255|unique:homepage_content,section_name,' . $id,
             'content' => 'required|string',
         ]);
-    
-        $section->update($request->all());
+
+        $section->update($validated);
     
         return response()->json([
             'status' => 200,
@@ -89,20 +106,31 @@ class HomepageContentController extends Controller
     }
 
     /**
-     * 🔴 Eliminar una sección del homepage.
+     * 🔴 Eliminar una sección del homepage. ADMIN
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $section = HomepageContent::find($id);
+        $section = HomePageContent::find($id);
 
-        return $section
-        ? tap($section)->delete() && response()->json([
+        if (!$section) {
+            return response()->json([
+                'status' => 404, 
+                'error' => 'Sección no encontrada'
+            ], 404);
+        }
+
+        if ($request->user->role !== 'admin') {
+            return response()->json([
+                'status' => 403,
+                'error' => 'Unauthorized'
+            ], 403);
+        }
+
+        $section->delete();
+
+        return response()->json([
             'status' => 200, 
             'message' => 'Sección eliminada'
-        ], 200)
-        : response()->json([
-            'status' => 404, 
-            'error' => 'Sección no encontrada'
-        ], 404);
-}
+        ], 200);
+    }
 }

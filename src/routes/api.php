@@ -169,7 +169,7 @@ Route::middleware('jwt.auth')->group(function () {
  * 🔹 CRUD: HOMEPAGE CONTENT (SOLO PARA ADMIN)
  * --------------------------------------------------------------------
  */
-Route::middleware(['auth:sanctum', 'role:admin'])->prefix('homepage-content')->group(function () {
+Route::middleware(['jwt.auth'])->prefix('homepage-content')->group(function () {
     Route::get('/', [HomepageContentController::class, 'index']);
     Route::get('/{id}', [HomepageContentController::class, 'show']);
     Route::post('/', [HomepageContentController::class, 'store']);
@@ -205,15 +205,17 @@ Route::prefix('collaborators')->group(function () {
     // Unsubscribirse de boletines (PÚBLICO)
     Route::post('/unsubscribe', [CollaboratorController::class, 'unsubscribe']);
 
-    
-    // ADMIN: Ver todos los colaboradores
-    Route::middleware(['auth:sanctum', 'role:admin'])->get('/', [CollaboratorController::class, 'index']);
+    // ADMIN
+    Route::middleware(['jwt.auth'])->group(function () {
+        // ADMIN: Ver todos los colaboradores
+        Route::get('/', [CollaboratorController::class, 'index']);
 
-    // ADMIN: Actualizar estado o suscripción de un colaborador
-    Route::middleware(['auth:sanctum', 'role:admin'])->put('/{id}', [CollaboratorController::class, 'update']);
+        // ADMIN: Actualizar estado o suscripción de un colaborador
+        Route::put('/{id}', [CollaboratorController::class, 'update']);
 
-    // ADMIN: Desactivar colaborador (soft delete)
-    Route::middleware(['auth:sanctum', 'role:admin'])->delete('/{id}', [CollaboratorController::class, 'destroy']);
+        // ADMIN: Desactivar colaborador (soft delete)
+        Route::delete('/{id}', [CollaboratorController::class, 'destroy']);
+    });
 });
 
 /**

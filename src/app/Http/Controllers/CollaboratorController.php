@@ -11,12 +11,20 @@ class CollaboratorController extends Controller
     {
         // Los administradores solo gestionan colaboradores   
         // Ellos se suscriben o desuscriben por su cuenta
-        $this->middleware(['auth:sanctum', 'role:admin'])->except(['store', 'unsubscribe']);
+        //$this->middleware(['auth:sanctum', 'role:admin'])->except(['store', 'unsubscribe']);
+        $this->middleware(['jwt.auth'])->only(['index', 'update', 'destroy']);
     }
 
-    /** Listar todos los colaboradores (solo Admin) */
-    public function index()
+    /** 🔵 Listar todos los colaboradores (solo Admin) */
+    public function index(Request $request)
     {
+        if ($request->user->role !== 'admin') {
+            return response()->json([
+                'status' => 403,
+                'error' => 'Unauthorized'
+            ], 403);
+        }
+
         return response()->json([
             'status' => 200,
             'message' => 'Lista de colaboradores obtenida',
@@ -24,29 +32,31 @@ class CollaboratorController extends Controller
         ], 200);
     }
 
-    /** Registrar un nuevo colaborador (cualquier persona puede registrarse) */
+    /** 🟡 Registrar un nuevo colaborador (cualquier persona puede registrarse) */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:collaborators',
             'reason' => 'required|string',
         ]);
-    
+
+        $collaborator = Collaborator::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'reason' => $validated['reason'],
+            'subscription_status' => true,
+            'status' => 'activo',
+        ]);
+
         return response()->json([
             'status' => 201,
             'message' => 'Colaborador registrado correctamente',
-            'data' => Collaborator::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'reason' => $request->reason,
-                'subscription_status' => true,
-                'status' => 'activo',
-            ])
+            'data' => $collaborator
         ], 201);
     }
 
-    /** Actualizar datos del colaborador (solo Admin) */
+    /** 🟠 Actualizar datos del colaborador (solo Admin) */
     public function update(Request $request, $id)
     {
         $collaborator = Collaborator::find($id);
@@ -58,12 +68,19 @@ class CollaboratorController extends Controller
             ], 404);
         }
 
-        $request->validate([
+        if ($request->user->role !== 'admin') {
+            return response()->json([
+                'status' => 403,
+                'error' => 'Unauthorized'
+            ], 403);
+        }
+
+        $validated = $request->validate([
             'subscription_status' => 'boolean',
             'status' => 'in:activo,inactivo',
         ]);
 
-        $collaborator->update($request->only(['subscription_status', 'status']));
+        $collaborator->update($validated);
 
         return response()->json([
             'status' => 200,
@@ -72,8 +89,8 @@ class CollaboratorController extends Controller
         ], 200);
     }
 
-    /** Desactivar un colaborador en lugar de eliminar (soft delete) */
-    public function destroy($id)
+    /** 🔴 Desactivar un colaborador en lugar de eliminar (soft delete) */
+    public function destroy(Request $request, $id)
     {
         $collaborator = Collaborator::find($id);
 
@@ -84,6 +101,13 @@ class CollaboratorController extends Controller
             ], 404);
         }
 
+        if ($request->user->role !== 'admin') {
+            return response()->json([
+                'status' => 403,
+                'error' => 'Unauthorized'
+            ], 403);
+        }
+
         $collaborator->update(['status' => 'inactivo']);
 
         return response()->json([
@@ -92,12 +116,12 @@ class CollaboratorController extends Controller
         ], 200);
     }
 
-    /** Permite que un colaborador se desuscriba del boletín */
+    /** 🟢 Permite que un colaborador se desuscriba del boletín */
     public function unsubscribe(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+        $validated = $request->validate(['email' => 'required|email']);
 
-        $collaborator = Collaborator::where('email', $request->email)->first();
+        $collaborator = Collaborator::where('email', $validated['email'])->first();
 
         if (!$collaborator) {
             return response()->json([
