@@ -38,6 +38,14 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
+  mailhog:
+    image: mailhog/mailhog
+    container_name: proplayas_mailhog
+    ports:
+      - "8025:8025" # Interfaz web para visualizar correos
+      - "1025:1025" # Puerto SMTP
+
+
 volumes: 
     db_data:
 

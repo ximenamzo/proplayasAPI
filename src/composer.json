@@ -11,6 +11,7 @@
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
+        "phpmailer/phpmailer": "^6.9",
         "spatie/laravel-permission": "^6.15"
     },
     "require-dev": {

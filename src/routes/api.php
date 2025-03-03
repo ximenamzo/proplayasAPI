@@ -4,7 +4,11 @@ use App\Models\User;
 use App\Helpers\JWTHandler;
 use App\Http\Controllers\CollaboratorController;
 use App\Http\Controllers\HomepageContentController;
+use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\NodeController;
+use App\Http\Controllers\MemberController;
 use App\Http\Middleware\JWTMiddleware;
+use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Hash;
@@ -35,6 +39,13 @@ Route::get('/test', function () {
         'message' => 'API is working!'
     ], 200);
 });
+
+// Ruta pública para enviar un correo de prueba
+Route::get('/test-email', function () {
+    $sent = MailService::sendMail('test@example.com', 'Prueba', 'Este es un correo de prueba');
+    return response()->json(['success' => $sent]);
+});
+
 
 
 /**-------------------------------------------------------------------------
@@ -100,25 +111,48 @@ Route::post('/login', function (Request $request) {
         ], 401);
     }
 
+    $token = JWTHandler::createToken($user, $request);
+
     return response()->json([
         'status' => 200,
         'message' => 'Login successful',
         'data' => [
             //'token' => $user->createToken('auth_token')->plainTextToken,
-            'token' => JWTHandler::createToken($user),
+            'token' => $token,
             'role' => $user->role
         ]
     ], 200);
 });
 
 // Logout
-Route::middleware(['jwt.auth'])->post('/logout', function (Request $request) {
-    //$request->user()->tokens()->delete();
+Route::middleware('jwt.auth')->post('/logout', function (Request $request) {
+    $token = $request->bearerToken();
+
+    if (!$token) {
+        return response()->json([
+            'status' => 400,
+            'error' => 'Token not provided'
+        ], 400);
+    }
+
+    JWTHandler::invalidateToken($token);
+
     return response()->json([
-        'status' => 200, 
+        'status' => 200,
         'message' => 'Logged out successfully'
     ], 200);
 });
+
+// Logout de todas las sesiones
+Route::middleware('jwt.auth')->post('/logout-all', function (Request $request) {
+    JWTHandler::invalidateAllSessions($request->user->sub);
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'All sessions logged out'
+    ], 200);
+});
+
 
 
 /**----------------------------------------------------------------
@@ -179,18 +213,34 @@ Route::middleware(['jwt.auth'])->prefix('homepage-content')->group(function () {
 
 
 /**
+ * 🔹 CRUD: INVITACIONES
+ * Aquí van las rutas para manejar invitaciones a nodos y miembros.
+ */
+Route::prefix('invitations')->group(function () {
+    Route::get('/{token}', [InvitationController::class, 'validateInvitation']);
+    Route::post('/accept', [InvitationController::class, 'acceptInvitation']);
+});
+
+
+/**
  * 🔹 CRUD: NODOS
  * Aquí van las rutas para gestionar los nodos (acceso según rol).
  */
+Route::middleware(['jwt.auth'])->prefix('nodes')->group(function () {
+    Route::get('/', [NodeController::class, 'index']);
+    Route::get('/{id}', [NodeController::class, 'show']);
+    Route::put('/{id}', [NodeController::class, 'update']);
+    Route::delete('/{id}', [NodeController::class, 'destroy']);
+
+    // Invitación a líder a nodo
+    Route::post('/invite', [InvitationController::class, 'inviteNodeLeader']);
+
+});
+
 
 /**
  * 🔹 CRUD: MIEMBROS
  * Aquí van las rutas para gestionar los miembros de nodos.
- */
-
-/**
- * 🔹 CRUD: INVITACIONES
- * Aquí van las rutas para manejar invitaciones a nodos y miembros.
  */
 
 /**----------------------------------------------------------------------------

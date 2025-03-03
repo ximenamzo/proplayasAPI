@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email');
-            $table->enum('role_type', ['nodo', 'miembro']);
+            $table->enum('role_type', ['admin', 'node_leader', 'member']);
             $table->enum('node_type', ['sociedad_civil', 'empresarial', 'cientifico', 'funcion_publica', 'individual'])->nullable();
             $table->foreignId('node_id')->nullable()->constrained('nodes')->onDelete('cascade');
+            $table->text('token')->nullable();
             $table->enum('status', ['pendiente', 'aceptada', 'expirada'])->default('pendiente');
             $table->timestamp('sent_date');
             $table->timestamp('accepted_date')->nullable();
