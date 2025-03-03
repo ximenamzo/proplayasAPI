@@ -15,10 +15,17 @@ class Invitation extends Model
         'role_type',
         'node_type',
         'node_id',
+        'token',
         'status',
         'sent_date',
         'accepted_date',
         'expiration_date'
+    ];
+
+    protected $casts = [
+        'sent_date' => 'datetime',
+        'accepted_date' => 'datetime',
+        'expiration_date' => 'datetime',
     ];
 
     /**
