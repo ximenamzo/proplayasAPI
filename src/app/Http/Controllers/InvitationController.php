@@ -49,7 +49,8 @@ class InvitationController extends Controller
             'expiration_date' => now()->addDays(7)
         ]);
 
-        $url = env('APP_URL') . "/registro?token=$token";
+        #$url = env('APP_URL') . "/registro?token=$token";
+        $url = env('APP_FRONTEND_URL', 'http://localhost:8080') . "/validate-invitation?token=$token";
         $body = "Hola {$request->name},
                 <br>ProPlayas te ha enviado una invitación para crear un Nodo y registrarte como su Líder.<br>
                  Por favor regístrate aquí: <a href='$url'>$url</a>";
@@ -89,7 +90,7 @@ class InvitationController extends Controller
             'expiration_date' => now()->addDays(7)
         ]);
 
-        $url = env('APP_URL') . "/registro?token=$token";
+        $url = env('APP_URL') . "/register?token=$token";
         $body = "Hola {$request->name},<br>Has sido invitado a ProPlayas como Miembro.<br>
                  Por favor regístrate aquí: <a href='$url'>$url</a>";
 
@@ -114,7 +115,12 @@ class InvitationController extends Controller
         return response()->json([
             'status' => 200, 
             'message' => 'Token válido', 
-            'data' => $invitation
+            'data' => [
+                'name' => $invitation->name,
+                'email' => $invitation->email,
+                'role_type' => $invitation->role_type,
+                'node_type' => $invitation->node_type,
+            ]
         ], 200);
     }
 
@@ -126,6 +132,14 @@ class InvitationController extends Controller
             'password' => 'required|string|min:8',
             'node_name' => 'required|string',
             'about' => 'string|nullable',
+            'country' => 'required|string',
+            'city' => 'required|string',
+            'degree' => 'string|nullable',
+            'postgraduate' => 'string|nullable',
+            'expertise_area' => 'string|nullable',
+            'research_work' => 'string|nullable',
+            'profile_picture' => 'string|nullable',
+            'social_media' => 'json|nullable'
         ]);
 
         // Decodificar el token
@@ -152,31 +166,46 @@ class InvitationController extends Controller
         // Decodificar la contraseña base64
         $decodedPassword = base64_decode($request->password);
 
+        // Crear el usuario Node Leader
         $user = User::create([
             'name' => $decoded->name,
             'email' => $decoded->email,
             'password' => Hash::make($decodedPassword),
             'role' => 'node_leader',
             'status' => 'activo',
+            'degree' => $request->degree,
+            'postgraduate' => $request->postgraduate,
+            'expertise_area' => $request->expertise_area,
+            'research_work' => $request->research_work,
+            'profile_picture' => $request->profile_picture,
+            'social_media' => $request->social_media ? json_encode($request->social_media) : null,
         ]);
 
+        // Crear el Nodo
         $node = Node::create([
             'leader_id' => $user->id,
             'name' => $request->node_name,
             'type' => $decoded->node_type,
             'about' => $request->about,
+            'country' => $request->country,
+            'city' => $request->city,
             'status' => 'activo',
+            'joined_in' => now()->year
         ]);
 
+        // Actualizar la invitación como aceptada
         $invitation->update([
-            'status' => 'accepted', 
+            'status' => 'aceptada', 
             'accepted_date' => now()
         ]);
 
         return response()->json([
             'status' => 201,
             'message' => 'Usuario y nodo registrados con éxito',
-            'data' => ['user' => $user, 'node' => $node]
+            'data' => [
+                'user' => $user, 
+                'node' => $node
+            ]
         ], 201);
     }
 }

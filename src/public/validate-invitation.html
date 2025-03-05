@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validación de Invitación</title>
+    <script>
+        async function validateToken() {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get("token");
+
+            if (!token) {
+                document.getElementById("message").innerHTML = "Token no proporcionado.";
+                return;
+            }
+
+            try {
+                let response = await fetch(`http://localhost:8080/api/invitations/${token}`);
+                let result = await response.json();
+
+                if (result.status === 200) {
+                    window.location.href = `register.html?token=${token}`;
+                } else {
+                    document.getElementById("message").innerHTML = result.error;
+                }
+            } catch (error) {
+                document.getElementById("message").innerHTML = "Error al validar la invitación.";
+            }
+        }
+
+        window.onload = validateToken;
+    </script>
+</head>
+<body>
+    <h1>Validando Invitación...</h1>
+    <p id="message"></p>
+</body>
+</html>

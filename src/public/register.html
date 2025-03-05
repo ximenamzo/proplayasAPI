@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - ProPlayas</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let token = new URLSearchParams(window.location.search).get("token");
+
+            async function fetchInvitationData() {
+                if (!token) {
+                    document.getElementById("message").innerText = "Token no válido.";
+                    return;
+                }
+
+                try {
+                    let response = await fetch(`http://localhost:8080/api/invitations/${token}`);
+                    let result = await response.json();
+
+                    console.log("Respuesta de la API:", result);
+
+                    if (result.status === 200) {
+                        document.getElementById("name").value = result.data.name;
+                        document.getElementById("email").value = result.data.email;
+                        //document.getElementById("role").value = result.data.role_type;
+                        document.getElementById("node_type").value = result.data.node_type;
+                        /*let nodeTypeInput = document.getElementById("node_type");
+                        if (nodeTypeInput) {
+                            nodeTypeInput.value = result.data.node_type;
+                        } else {
+                            console.error("⚠ No se encontró el input con id='node_type'.");
+                        }*/
+                    } else {
+                        document.getElementById("message").innerText = result.error;
+                        document.getElementById("form").style.display = "none";
+                    }
+                } catch (error) {
+                    console.error("❌ Error al obtener los datos:", error);
+                    document.getElementById("message").innerText = "Error al obtener los datos.";
+                }
+            }
+
+            async function submitForm(event) {
+                event.preventDefault();
+                let formData = new FormData(event.target);
+
+                formData.append("token", token);
+                formData.set("password", btoa(formData.get("password")));
+
+                let response = await fetch("http://localhost:8080/api/invitations/accept", {
+                    method: "POST",
+                    body: JSON.stringify(Object.fromEntries(formData)),
+                    headers: { "Content-Type": "application/json" }
+                });
+
+                let result = await response.json();
+                document.getElementById("message").innerText = result.message || result.error;
+            }
+
+            //window.onload = fetchInvitationData;
+            fetchInvitationData();
+        });
+    </script>
+</head>
+<body>
+    <h1>Registro de Node Leader</h1>
+    <p id="message"></p>
+    
+    <form id="form" onsubmit="submitForm(event)">
+        <h2>Información Personal</h2>
+        <label>Nombre: <input type="text" id="name" name="name" readonly></label><br>
+        <label>Email: <input type="email" id="email" name="email" readonly></label><br>
+        <label>Contraseña: <input type="password" name="password" required></label><br>
+        <label>Confirmar Contraseña: <input type="password" name="confirm_password" required></label><br>
+        <label>Área de Expertise: <input type="text" name="expertise_area"></label><br>
+        <label>Trabajo de Investigación: <input type="text" name="research_work"></label><br>
+
+        <h2>Información del Nodo</h2>
+        <label>Tipo de Nodo: <input type="text" id="node_type" name="node_type" readonly></label><br>
+        <label>Nombre del Nodo: <input type="text" name="node_name" required></label><br>
+        <label>Descripción: <textarea name="about"></textarea></label><br>
+        <label>País: <input type="text" name="country" required></label><br>
+        <label>Ciudad: <input type="text" name="city" required></label><br>
+
+        <button type="submit">Registrarse</button>
+    </form>
+</body>
+</html>
