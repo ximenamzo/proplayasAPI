@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Helpers\JWTHandler;
 use App\Models\Invitation;
 use App\Models\User;
+use App\Models\Node;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 
 class InvitationController extends Controller
 {
@@ -130,33 +133,38 @@ class InvitationController extends Controller
         $request->validate([
             'token' => 'required|string',
             'password' => 'required|string|min:8',
+            'expertise_area' => 'string|nullable',
+            'research_work' => 'string|nullable',
             'node_name' => 'required|string',
             'about' => 'string|nullable',
             'country' => 'required|string',
             'city' => 'required|string',
-            'degree' => 'string|nullable',
-            'postgraduate' => 'string|nullable',
-            'expertise_area' => 'string|nullable',
-            'research_work' => 'string|nullable',
-            'profile_picture' => 'string|nullable',
-            'social_media' => 'json|nullable'
+            #'degree' => 'string|nullable',
+            #'postgraduate' => 'string|nullable',
+            #'profile_picture' => 'string|nullable',
+            #'social_media' => 'json|nullable'
         ]);
 
         // Decodificar el token
         try {
             $decoded = JWTHandler::decodeToken($request->token);
+            Log::info("Token decodificado correctamente", (array) $decoded);
         } catch (Exception $e) {
+            Log::error("Error al decodificar el token: " . $e->getMessage());
             return response()->json([
                 'status' => 400,
                 'error' => 'Token inválido o expirado'
             ], 400);
         }
 
+        // Buscar la invitación asociada
         $invitation = Invitation::where('email', $decoded->email)
                                 ->where('status', 'pendiente')
                                 ->first();
 
-        if (!$invitation || $invitation->status !== 'pendiente') {
+        #if (!$invitation || $invitation->status !== 'pendiente') {
+        if (!$invitation) {
+            Log::error("Invitación no encontrada o ya utilizada para: " . $decoded->email);
             return response()->json([
                 'status' => 400,
                 'error' => 'Invitación no encontrada, expirada o ya utilizada.'
@@ -172,26 +180,31 @@ class InvitationController extends Controller
             'email' => $decoded->email,
             'password' => Hash::make($decodedPassword),
             'role' => 'node_leader',
-            'status' => 'activo',
-            'degree' => $request->degree,
-            'postgraduate' => $request->postgraduate,
+            #'degree' => $request->degree,
+            #'postgraduate' => $request->postgraduate,
             'expertise_area' => $request->expertise_area,
             'research_work' => $request->research_work,
-            'profile_picture' => $request->profile_picture,
-            'social_media' => $request->social_media ? json_encode($request->social_media) : null,
+            #'profile_picture' => $request->profile_picture,
+            #'social_media' => $request->social_media ? json_encode($request->social_media) : null,
+            'status' => 'activo',
         ]);
+
+        Log::info("Usuario creado correctamente con ID: " . $user->id);
 
         // Crear el Nodo
         $node = Node::create([
             'leader_id' => $user->id,
-            'name' => $request->node_name,
+            'code' => Str::random(3),
             'type' => $decoded->node_type,
+            'name' => $request->node_name,
             'about' => $request->about,
             'country' => $request->country,
             'city' => $request->city,
-            'status' => 'activo',
-            'joined_in' => now()->year
+            'joined_in' => now()->year,
+            'status' => 'activo'
         ]);
+
+        Log::info("Nodo registrado correctamente con ID: " . $node->id);
 
         // Actualizar la invitación como aceptada
         $invitation->update([

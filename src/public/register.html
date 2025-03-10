@@ -5,49 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro - ProPlayas</title>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            let token = new URLSearchParams(window.location.search).get("token");
+        let token = new URLSearchParams(window.location.search).get("token");
 
-            async function fetchInvitationData() {
-                if (!token) {
-                    document.getElementById("message").innerText = "Token no válido.";
-                    return;
-                }
-
-                try {
-                    let response = await fetch(`http://localhost:8080/api/invitations/${token}`);
-                    let result = await response.json();
-
-                    console.log("Respuesta de la API:", result);
-
-                    if (result.status === 200) {
-                        document.getElementById("name").value = result.data.name;
-                        document.getElementById("email").value = result.data.email;
-                        //document.getElementById("role").value = result.data.role_type;
-                        document.getElementById("node_type").value = result.data.node_type;
-                        /*let nodeTypeInput = document.getElementById("node_type");
-                        if (nodeTypeInput) {
-                            nodeTypeInput.value = result.data.node_type;
-                        } else {
-                            console.error("⚠ No se encontró el input con id='node_type'.");
-                        }*/
-                    } else {
-                        document.getElementById("message").innerText = result.error;
-                        document.getElementById("form").style.display = "none";
-                    }
-                } catch (error) {
-                    console.error("❌ Error al obtener los datos:", error);
-                    document.getElementById("message").innerText = "Error al obtener los datos.";
-                }
+        async function fetchInvitationData() {
+            if (!token) {
+                document.getElementById("message").innerText = "Token no válido.";
+                return;
             }
 
-            async function submitForm(event) {
-                event.preventDefault();
-                let formData = new FormData(event.target);
+            try {
+                let response = await fetch(`http://localhost:8080/api/invitations/${token}`);
+                let result = await response.json();
 
-                formData.append("token", token);
-                formData.set("password", btoa(formData.get("password")));
+                console.log("🔹 Respuesta de la API:", result);
 
+                if (result.status === 200) {
+                    document.getElementById("name").value = result.data.name;
+                    document.getElementById("email").value = result.data.email;
+                    document.getElementById("node_type").value = result.data.node_type;
+                } else {
+                    document.getElementById("message").innerText = result.error;
+                    document.getElementById("form").style.display = "none";
+                }
+            } catch (error) {
+                console.error("❌ Error al obtener los datos:", error);
+                document.getElementById("message").innerText = "Error al obtener los datos.";
+            }
+        }
+
+        async function submitForm(event) {
+            event.preventDefault(); // ⛔ Evita que la página se recargue
+
+            console.log("🟢 Procesando datos del formulario...");
+
+            let formData = new FormData(event.target);
+            formData.append("token", token);
+            formData.set("password", btoa(formData.get("password")));
+            formData.set("confirm_password", btoa(formData.get("confirm_password")));
+
+            console.log("📤 Datos enviados:", Object.fromEntries(formData));
+
+            try {
                 let response = await fetch("http://localhost:8080/api/invitations/accept", {
                     method: "POST",
                     body: JSON.stringify(Object.fromEntries(formData)),
@@ -55,18 +53,29 @@
                 });
 
                 let result = await response.json();
-                document.getElementById("message").innerText = result.message || result.error;
-            }
+                console.log("🔹 Respuesta del servidor:", result);
 
-            //window.onload = fetchInvitationData;
-            fetchInvitationData();
-        });
+                if (result.status === 201) {
+                    alert("✅ Registro exitoso. Redirigiendo...");
+                    setTimeout(() => {
+                        window.location.href = "http://localhost:8080/login.html";
+                    }, 3000);
+                } else {
+                    document.getElementById("message").innerText = result.error;
+                }
+            } catch (error) {
+                console.error("❌ Error al enviar la solicitud:", error);
+                document.getElementById("message").innerText = "Error al registrar.";
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", fetchInvitationData);
     </script>
 </head>
 <body>
     <h1>Registro de Node Leader</h1>
     <p id="message"></p>
-    
+
     <form id="form" onsubmit="submitForm(event)">
         <h2>Información Personal</h2>
         <label>Nombre: <input type="text" id="name" name="name" readonly></label><br>
