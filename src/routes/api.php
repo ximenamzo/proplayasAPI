@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Models\Node;
+use App\Models\Member;
 use App\Helpers\JWTHandler;
 use App\Http\Controllers\CollaboratorController;
 use App\Http\Controllers\HomepageContentController;
@@ -119,7 +121,8 @@ Route::post('/login', function (Request $request) {
         'data' => [
             //'token' => $user->createToken('auth_token')->plainTextToken,
             'token' => $token,
-            'role' => $user->role
+            'role' => $user->role,
+            'node_id' => $user->role === 'node_leader' ? Node::where('leader_id', $user->id)->value('id') : null
         ]
     ], 200);
 });
@@ -226,15 +229,17 @@ Route::prefix('invitations')->group(function () {
  * 🔹 CRUD: NODOS
  * Aquí van las rutas para gestionar los nodos (acceso según rol).
  */
-Route::middleware(['jwt.auth'])->prefix('nodes')->group(function () {
-    Route::get('/', [NodeController::class, 'index']);
-    Route::get('/{id}', [NodeController::class, 'show']);
-    Route::put('/{id}', [NodeController::class, 'update']);
-    Route::delete('/{id}', [NodeController::class, 'destroy']);
+Route::prefix('nodes')->group(function () {
+    Route::get('/', [NodeController::class, 'index']); // Ver todos los nodos
+    Route::get('/{id}', [NodeController::class, 'show']); // Ver un nodo
 
-    // Invitación a líder a nodo
-    Route::post('/invite', [InvitationController::class, 'inviteNodeLeader']);
-
+    Route::middleware(['jwt.auth'])->group(function () {
+        Route::put('/{id}', [NodeController::class, 'update']);
+        Route::delete('/{id}', [NodeController::class, 'destroy']);
+        
+        // Invitación a líder a nodo
+        Route::post('/invite', [InvitationController::class, 'inviteNodeLeader']);
+    });
 });
 
 
@@ -242,6 +247,22 @@ Route::middleware(['jwt.auth'])->prefix('nodes')->group(function () {
  * 🔹 CRUD: MIEMBROS
  * Aquí van las rutas para gestionar los miembros de nodos.
  */
+Route::prefix('members')->group(function () {
+    Route::get('/', [MemberController::class, 'index']); // Ver todos los miembros
+    Route::get('/{id}', [MemberController::class, 'show']); // Ver un miembro
+
+    Route::middleware(['jwt.auth'])->group(function () {
+        Route::put('/{id}', [MemberController::class, 'update']);
+        Route::delete('/{id}', [MemberController::class, 'destroy']);
+
+        // Admin reasigna un miembro a otro nodo
+        Route::put('/{id}/reassign', [MemberController::class, 'reassignNode']);
+
+        // Invitación a miembro
+        Route::post('/invite', [InvitationController::class, 'inviteMember']);
+    });
+});
+
 
 /**----------------------------------------------------------------------------
  * 🔹 CRUD: COLABORADORES

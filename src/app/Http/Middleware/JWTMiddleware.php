@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use App\Helpers\JWTHandler;
 use Firebase\JWT\ExpiredException;
@@ -30,7 +31,17 @@ class JWTMiddleware
 
         try {
             $decoded = JWTHandler::decodeToken($token);
-            $request->user = $decoded;
+            #$request->user = $decoded;
+            Log::info("Token decodificado correctamente:", $decoded);
+
+            // 🔹 Convertir a objeto estándar
+            $userObject = json_decode(json_encode($decoded), false);
+
+            // 🔹 Asegurar que Laravel reconozca bien el usuario
+            $request->setUserResolver(fn() => $userObject);
+            $request->attributes->set('user', $userObject);
+
+            Log::info("Usuario autenticado en Middleware:", (array) $userObject);           
         } catch (ExpiredException $e) {
             return response()->json([
                 'status' => 401,
@@ -42,6 +53,7 @@ class JWTMiddleware
                 'error' => 'Token signature invalid'
             ], 401);
         } catch (Exception $e) {
+            Log::error("Error al decodificar el token: " . $e->getMessage());
             return response()->json([
                 'status' => 401,
                 'error' => 'Token invalid'

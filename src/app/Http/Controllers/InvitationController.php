@@ -6,6 +6,7 @@ use App\Helpers\JWTHandler;
 use App\Models\Invitation;
 use App\Models\User;
 use App\Models\Node;
+use App\Models\Member;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -17,7 +18,17 @@ class InvitationController extends Controller
     /** Enviar invitación para un Node Leader */
     public function inviteNodeLeader(Request $request)
     {
-        if ($request->user->role !== 'admin') {
+        Log::info("Usuario autenticado:", ['user' => $request->user()]);
+
+        $user = $request->user(); // ✅ Asegurar que no sea null
+        if (!$user || !isset($user->role)) {
+            return response()->json([
+                'status' => 401, 
+                'error' => 'Usuario no autenticado correctamente'
+            ], 401);
+        }
+        
+        if ($user->role !== 'admin') {
             return response()->json([
                 'status' => 403, 
                 'error' => 'Unauthorized'
@@ -39,8 +50,9 @@ class InvitationController extends Controller
         ];
 
         // Generar token con los datos del usuario
-        $token = JWTHandler::createToken($invitationData);
+        $token = JWTHandler::createToken($invitationData, null, true);
 
+        // GUardar invitación en la BD
         $invitation = Invitation::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -69,10 +81,23 @@ class InvitationController extends Controller
 
 
     /** Enviar invitación para un Miembro */
-    public function inviteMember(Request $request, $node_id)
+    public function inviteMember(Request $request)
     {
-        if ($request->user->role !== 'node_leader') {
-            return response()->json(['status' => 403, 'error' => 'Unauthorized'], 403);
+        Log::info("Usuario autenticado:", ['user' => $request->user()]);
+
+        $user = $request->user();
+        if (!$user || !isset($user->role)) {
+            return response()->json([
+                'status' => 401, 
+                'error' => 'Usuario no autenticado correctamente'
+            ], 401);
+        }
+        
+        if ($user->role !== 'node_leader') {
+            return response()->json([
+                'status' => 403, 
+                'error' => 'Unauthorized'
+            ], 403);
         }
 
         $request->validate([
@@ -80,12 +105,35 @@ class InvitationController extends Controller
             'email' => 'required|email|unique:invitations'
         ]);
 
-        $token = Str::random(32);
+        // Obtener `node_id` del usuario autenticado desde la BD
+        $node = Node::where('leader_id', $user->id)->first();
+        $node_id = $node ? $node->id : null;
+
+        Log::info("Node ID obtenido:", ['node_id' => $node_id]);
+
+        if (!$node_id) {
+            return response()->json([
+                'status' => 400, 
+                'error' => 'No se encontró el Node ID'
+            ], 400);
+        }
+
+        // Crear objeto con los datos de la invitación
+        $invitationData = (object)[
+            'name' => $request->name,
+            'email' => $request->email,
+            'role_type' => 'member',
+            'node_id' => $node_id
+        ];
+
+        // Generar token con la info
+        $token = JWTHandler::createToken($invitationData, null, true);
+
+        // Guardar invitación en DB
         $invitation = Invitation::create([
             'name' => $request->name,
             'email' => $request->email,
             'role_type' => 'member',
-            'node_type' => null,
             'node_id' => $node_id,
             'token' => $token,
             'status' => 'pendiente',
@@ -93,13 +141,18 @@ class InvitationController extends Controller
             'expiration_date' => now()->addDays(7)
         ]);
 
-        $url = env('APP_URL') . "/register?token=$token";
-        $body = "Hola {$request->name},<br>Has sido invitado a ProPlayas como Miembro.<br>
+        // Enviar email de invitación al usuario
+        $url = env('APP_FRONTEND_URL', 'http://localhost:8080') . "/validate-invitation?token=$token";
+        $body = "Hola {$request->name},<br>Has sido invitado a ProPlayas como Miembro de Nodo.<br>
                  Por favor regístrate aquí: <a href='$url'>$url</a>";
 
         MailService::sendMail($request->email, 'Invitación a ProPlayas', $body);
 
-        return response()->json(['status' => 200, 'message' => 'Invitación enviada']);
+        return response()->json([
+            'status' => 201,
+            'message' => 'Invitación enviada con éxito',
+            'data' => $invitation
+        ], 201);
     }
 
 
@@ -122,9 +175,9 @@ class InvitationController extends Controller
                 'name' => $invitation->name,
                 'email' => $invitation->email,
                 'role_type' => $invitation->role_type,
-                'node_type' => $invitation->node_type,
-            ]
-        ], 200);
+                'node_type' => $invitation->node_type ?? null,
+                'node_id' => $invitation->node_id ?? null
+            ]], 200);
     }
 
     /** Aceptar una invitación y registrar usuario y nodo */
@@ -135,14 +188,6 @@ class InvitationController extends Controller
             'password' => 'required|string|min:8',
             'expertise_area' => 'string|nullable',
             'research_work' => 'string|nullable',
-            'node_name' => 'required|string',
-            'about' => 'string|nullable',
-            'country' => 'required|string',
-            'city' => 'required|string',
-            #'degree' => 'string|nullable',
-            #'postgraduate' => 'string|nullable',
-            #'profile_picture' => 'string|nullable',
-            #'social_media' => 'json|nullable'
         ]);
 
         // Decodificar el token
@@ -162,7 +207,6 @@ class InvitationController extends Controller
                                 ->where('status', 'pendiente')
                                 ->first();
 
-        #if (!$invitation || $invitation->status !== 'pendiente') {
         if (!$invitation) {
             Log::error("Invitación no encontrada o ya utilizada para: " . $decoded->email);
             return response()->json([
@@ -171,40 +215,78 @@ class InvitationController extends Controller
             ], 400);
         }
 
+        // Verificar si el usuario ya existe antes de crearlo
+        $existingUser = User::where('email', $decoded->email)->first();
+
+        if ($existingUser) {
+            Log::warning("Intento de registro con correo ya existente: " . $decoded->email);
+            return response()->json([
+                'status' => 400,
+                'error' => 'El correo ya está registrado en la plataforma'
+            ], 400);
+        }
+
         // Decodificar la contraseña base64
         $decodedPassword = base64_decode($request->password);
 
-        // Crear el usuario Node Leader
+        // Determinar el rol
+        $role = $decoded->role_type;
+
+        // Crear el usuario 
         $user = User::create([
             'name' => $decoded->name,
             'email' => $decoded->email,
             'password' => Hash::make($decodedPassword),
-            'role' => 'node_leader',
-            #'degree' => $request->degree,
-            #'postgraduate' => $request->postgraduate,
+            'role' => $role,
             'expertise_area' => $request->expertise_area,
-            'research_work' => $request->research_work,
-            #'profile_picture' => $request->profile_picture,
-            #'social_media' => $request->social_media ? json_encode($request->social_media) : null,
+            'research_work' => $request->research_work,            
             'status' => 'activo',
         ]);
 
         Log::info("Usuario creado correctamente con ID: " . $user->id);
 
-        // Crear el Nodo
-        $node = Node::create([
-            'leader_id' => $user->id,
-            'code' => Str::random(3),
-            'type' => $decoded->node_type,
-            'name' => $request->node_name,
-            'about' => $request->about,
-            'country' => $request->country,
-            'city' => $request->city,
-            'joined_in' => now()->year,
-            'status' => 'activo'
-        ]);
+        $node = null;
 
-        Log::info("Nodo registrado correctamente con ID: " . $node->id);
+        if ($role === 'node_leader') {
+            // Crear el Nodo
+            $node = Node::create([
+                'leader_id' => $user->id,
+                'code' => Str::random(3),
+                'type' => $decoded->node_type,
+                'name' => $request->node_name,
+                'about' => $request->about,
+                'country' => $request->country,
+                'city' => $request->city,
+                'joined_in' => now()->year,
+                'status' => 'activo'
+            ]);
+    
+            Log::info("Nodo registrado correctamente con ID: " . $node->id);
+        } elseif ($role === 'member') {
+            // Asignar el usuario como miembro de un nodo
+            $node_id = $decoded->node_id;
+
+            if (!$node_id) {
+                return response()->json([
+                    'status' => 400,
+                    'error' => 'No se pudo determinar el nodo'
+                ], 400);
+            }
+
+            // Generar codigo de miembro
+            $lastMember = Member::where('node_id', $node_id)->orderBy('id', 'desc')->first();
+            $memberCode = $lastMember ? intval(substr($lastMember->member_code, -2)) + 1 : 1;
+            $formattedCode = str_pad($memberCode, 2, '0', STR_PAD_LEFT);
+
+            Member::create([
+                'user_id' => $user->id,
+                'node_id' => $node_id,
+                'member_code' => strtoupper(Node::find($node_id)->code) . "." . $formattedCode,
+                'status' => 'activo'
+            ]);
+
+            Log::info("Miembro registrado en nodo ID: " . $node_id);
+        }
 
         // Actualizar la invitación como aceptada
         $invitation->update([

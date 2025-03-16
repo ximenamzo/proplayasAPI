@@ -6,13 +6,14 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Config;
 use App\Models\Session;
+use App\Models\Node;
 
 class JWTHandler
 {
-    public static function createToken($user, $request = null)
+    public static function createToken($user, $request = null, $isInvitation = false)
     {
         $payload = [
-            'iss' => env('APP_URL'),
+            'iss' => env('APP_URL', 'http://localhost'),
             'iat' => time(),
             'exp' => time() + (Config::get('jwt.ttl') * 60)
         ];
@@ -26,6 +27,13 @@ class JWTHandler
             // Si es una sesión real, se guarda en BD
             if ($request) {
                 $token = JWT::encode($payload, Config::get('jwt.secret'), 'HS256');
+                // INVALIDAR TOKENS ANTERIORES EN LA MISMA IP/NAVEGADOR
+                /*Session::where('user_id', $user->id)
+                    ->where('ip_address', $request->ip())
+                    ->where('user_agent', $request->header('User-Agent'))
+                    ->delete();
+                    */
+                // ALMACENAR EL NUEVO TOKEN
                 Session::create([
                     'user_id' => $user->id,
                     'token' => $token,
@@ -34,11 +42,21 @@ class JWTHandler
                 ]);
                 return $token;
             }
-        } elseif (isset($user->email)) {
+        // Si es un token de invitacion
+        } elseif ($isInvitation) {
             $payload['name'] = $user->name;
             $payload['email'] = $user->email;
             $payload['role_type'] = $user->role_type;
-            $payload['node_type'] = $user->node_type ?? null;
+
+            // Solo agregar `node_type` si es un `node_leader`
+            if ($user->role_type === 'node_leader' && isset($user->node_type)) {
+                $payload['node_type'] = $user->node_type;
+            }
+            
+            // Solo agregar `node_id` si es un `member`
+            if ($user->role_type === 'member' && isset($user->node_id)) {
+                $payload['node_id'] = $user->node_id;
+            }
 
             return JWT::encode($payload, Config::get('jwt.secret'), 'HS256');
         }
