@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Models\Node;
 use App\Models\Member;
 use App\Helpers\JWTHandler;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CollaboratorController;
 use App\Http\Controllers\HomepageContentController;
 use App\Http\Controllers\InvitationController;
@@ -55,107 +56,10 @@ Route::get('/test-email', function () {
  * Rutas para el registro de usuarios, inicio de sesión y cierre de sesión.
  * -------------------------------------------------------------------------
  */
-// Registro de usuarios con asignación del rol
-Route::post('/register', function (Request $request) {
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users',
-        'password' => 'required|string|min:8',
-        'role' => 'required|in:admin,node_leader,member',
-    ]);
-
-    // Decodificar la contraseña base64
-    $decodedPassword = base64_decode($request->password);
-
-    // Crear usuario con contraseña hasheada
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => Hash::make($decodedPassword),
-        'role' => $request->role,
-        'status' => 'activo',
-    ]);
-
-    // Verificar si el rol existe en la BD y asignarlo
-    $role = Role::where('name', $request->role)->first();
-    if ($role) {
-        $user->assignRole($role);
-    } else {
-        return response()->json([
-            'status' => 400, 
-            'error' => 'Role not found'
-        ], 400);
-    }
-
-    return response()->json([
-        'status' => 201, 
-        'message' => 'User registered successfully', 
-        'data' => $user
-    ], 201);
-});
-
-// 🔹 Inicio de sesión con autenticación y roles
-Route::post('/login', function (Request $request) {
-    $request->validate([
-        'email' => 'required|string|email',
-        'password' => 'required|string',
-    ]);
-
-    $user = User::where('email', $request->email)->first();
-
-    // Decodificar la contraseña base64 antes de validarla
-    $decodedPassword = base64_decode($request->password);
-
-    if (!$user || !Hash::check($decodedPassword, $user->password)) {
-        return response()->json([
-            'status' => 401,
-            'error' => 'Invalid credentials'
-        ], 401);
-    }
-
-    $token = JWTHandler::createToken($user, $request);
-
-    return response()->json([
-        'status' => 200,
-        'message' => 'Login successful',
-        'data' => [
-            //'token' => $user->createToken('auth_token')->plainTextToken,
-            'token' => $token,
-            'role' => $user->role,
-            'node_id' => $user->role === 'node_leader' ? Node::where('leader_id', $user->id)->value('id') : null
-        ]
-    ], 200);
-});
-
-// Logout
-Route::middleware('jwt.auth')->post('/logout', function (Request $request) {
-    $token = $request->bearerToken();
-
-    if (!$token) {
-        return response()->json([
-            'status' => 400,
-            'error' => 'Token not provided'
-        ], 400);
-    }
-
-    JWTHandler::invalidateToken($token);
-
-    return response()->json([
-        'status' => 200,
-        'message' => 'Logged out successfully'
-    ], 200);
-});
-
-// Logout de todas las sesiones
-Route::middleware('jwt.auth')->post('/logout-all', function (Request $request) {
-    JWTHandler::invalidateAllSessions($request->user->sub);
-
-    return response()->json([
-        'status' => 200,
-        'message' => 'All sessions logged out'
-    ], 200);
-});
-
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('jwt.auth')->post('/logout', [AuthController::class, 'logout']);
+Route::middleware('jwt.auth')->post('/logout-all', [AuthController::class, 'logoutAll']);
 
 
 /**----------------------------------------------------------------
