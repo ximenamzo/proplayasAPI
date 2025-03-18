@@ -128,6 +128,17 @@ Route::prefix('invitations')->group(function () {
     Route::post('/accept', [InvitationController::class, 'acceptInvitation']);
 });
 
+/**
+ * 🔹 CRUD: ADMINS
+ * Rutas para gestion de admins (pocos).
+ */
+Route::middleware(['jwt.auth'])->prefix('admins')->group(function () {
+    Route::post('/invite', [InvitationController::class, 'inviteAdmin']);
+
+    // get index
+    // get show
+});
+
 
 /**
  * 🔹 CRUD: NODOS
