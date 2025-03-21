@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Models\Node;
 use App\Models\Member;
 use App\Helpers\JWTHandler;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CollaboratorController;
 use App\Http\Controllers\HomepageContentController;
@@ -130,13 +131,14 @@ Route::prefix('invitations')->group(function () {
 
 /**
  * 🔹 CRUD: ADMINS
- * Rutas para gestion de admins (pocos).
+ * Rutas para gestion de admins (solo permiso de admins).
  */
 Route::middleware(['jwt.auth'])->prefix('admins')->group(function () {
-    Route::post('/invite', [InvitationController::class, 'inviteAdmin']);
-
-    // get index
-    // get show
+    Route::get('/', [AdminController::class, 'index']); // Lista de todos los admins
+    Route::get('/{id}', [AdminController::class, 'show']); // Ver un admin específico
+    Route::post('/invite', [InvitationController::class, 'inviteAdmin']); // Invitar un nuevo admin
+    Route::put('/{id}', [AdminController::class, 'update']); // Editar admin
+    Route::delete('/{id}', [AdminController::class, 'destroy']); // Eliminar un admin (solo desde consola)
 });
 
 
