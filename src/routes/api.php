@@ -11,6 +11,7 @@ use App\Http\Controllers\HomepageContentController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\UserController;
 use App\Http\Middleware\JWTMiddleware;
 use App\Services\MailService;
 use Illuminate\Http\Request;
@@ -49,6 +50,13 @@ Route::get('/test-email', function () {
     $sent = MailService::sendMail('test@example.com', 'Prueba', 'Este es un correo de prueba');
     return response()->json(['success' => $sent]);
 });
+
+/** 🔹 ENDPOINTS SOLO PARA DEV (VER USUARIOS) */
+if (app()->environment() === 'local') {
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+}
+
 
 
 
