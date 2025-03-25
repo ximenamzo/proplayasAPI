@@ -9,6 +9,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CollaboratorController;
 use App\Http\Controllers\HomepageContentController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\NodeLeaderController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\UserController;
@@ -159,8 +160,9 @@ Route::prefix('nodes')->group(function () {
     Route::get('/{id}', [NodeController::class, 'show']); // Ver un nodo
 
     Route::middleware(['jwt.auth'])->group(function () {
-        Route::put('/{id}', [NodeController::class, 'update']);
-        Route::delete('/{id}', [NodeController::class, 'destroy']);
+        Route::put('/{id}', [NodeController::class, 'update']); // Node leader edita su nodo
+        Route::delete('/{id}', [NodeController::class, 'destroy']); // Admin elimina nodo (soft delete)
+        Route::put('/{id}/reassign-leader', [NodeController::class, 'reassignLeader']); // Admin reasigna líder
         
         // Invitación a líder a nodo
         Route::post('/invite', [InvitationController::class, 'inviteNodeLeader']);
