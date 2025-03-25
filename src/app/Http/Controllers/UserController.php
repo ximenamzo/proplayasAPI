@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    /** Obtener todos los usuarios */
+    /** 🟢 Obtener todos los usuarios */
     public function index()
     {
         if (app()->environment() !== 'local') {
@@ -26,28 +26,44 @@ class UserController extends Controller
         ]);
     }
 
-    /** Obtener un solo usuario segun su ID */
+    /** 🔵 Obtener un usuario por ID */
     public function show($id)
     {
-        if (app()->environment() !== 'local') {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'Este endpoint solo está disponible en entorno de desarrollo'
-            ], 403);
-        }
-
-        $user = User::find($id);
+        $user = User::where('id', $id)
+                    ->whereIn('role', ['node_leader', 'member'])
+                    ->select('id', 'name', 'username', 'email', 'role', 'about', 'degree', 'postgraduate', 'expertise_area', 'research_work', 'profile_picture', 'social_media', 'status')
+                    ->first();
 
         if (!$user) {
             return response()->json([
-                'status' => 404, 
+                'status' => 404,
                 'error' => 'Usuario no encontrado'
             ], 404);
         }
 
         return response()->json([
             'status' => 200,
-            'message' => 'Usuario encontrado',
+            'data' => $user
+        ]);
+    }
+
+    /** 🔵 Obtener un usuario por USERNAME */
+    public function showByUsername($username)
+    {
+        $user = User::where('username', $username)
+                    ->whereIn('role', ['node_leader', 'member'])
+                    ->select('id', 'name', 'username', 'email', 'role', 'about', 'degree', 'postgraduate', 'expertise_area', 'research_work', 'profile_picture', 'social_media', 'status')
+                    ->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => 404,
+                'error' => 'Usuario no encontrado'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 200,
             'data' => $user
         ]);
     }

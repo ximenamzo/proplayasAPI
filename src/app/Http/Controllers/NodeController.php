@@ -29,7 +29,8 @@ class NodeController extends Controller
     /** 🔵 Ver perfil de un nodo (público) */
     public function show($id)
     {
-        $node = Node::with(['leader:id,name,email,degree,postgraduate'])->find($id); 
+        $node = Node::with(['leader:id,name,email,degree,postgraduate'])
+                    ->find($id); 
 
         if (!$node) {
             return response()->json([
@@ -44,6 +45,28 @@ class NodeController extends Controller
             'data' => $node
         ]);
     }
+
+    /** 🔵 Ver perfil de un nodo según su CÓDIGO (público) */ 
+    public function showByCode($code)
+    {
+        $node = Node::with(['leader:id,name,email,degree,postgraduate'])
+                    ->where('code', $code)
+                    ->first();
+
+        if (!$node) {
+            return response()->json([
+                'status' => 404,
+                'error' => 'Nodo no encontrado'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Detalle del nodo obtenido correctamente',
+            'data' => $node
+        ]);
+    }
+
 
     /** 🟠 Node leader edita su nodo */
     public function update(Request $request, $id)

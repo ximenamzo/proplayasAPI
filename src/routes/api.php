@@ -52,10 +52,9 @@ Route::get('/test-email', function () {
     return response()->json(['success' => $sent]);
 });
 
-/** 🔹 ENDPOINTS SOLO PARA DEV (VER USUARIOS) */
+/** 🔹 ENDPOINT PARA VER TODOS LOS USUARIOS (SOLO EN DEV) */ 
 if (app()->environment() === 'local') {
     Route::get('/users', [UserController::class, 'index']);
-    Route::get('/users/{id}', [UserController::class, 'show']);
 }
 
 
@@ -158,6 +157,7 @@ Route::middleware(['jwt.auth'])->prefix('admins')->group(function () {
 Route::prefix('nodes')->group(function () {
     Route::get('/', [NodeController::class, 'index']); // Ver todos los nodos
     Route::get('/{id}', [NodeController::class, 'show']); // Ver un nodo
+    Route::get('/code/{code}', [NodeController::class, 'showByCode']); // Ver un nodo por su código
 
     Route::middleware(['jwt.auth'])->group(function () {
         Route::put('/{id}', [NodeController::class, 'update']); // Node leader edita su nodo
@@ -168,6 +168,17 @@ Route::prefix('nodes')->group(function () {
         Route::post('/invite', [InvitationController::class, 'inviteNodeLeader']);
     });
 });
+
+
+/**
+ * 🔹 USERS (PERFILES PÚBLICOS POR ID O USERNAME)
+ * Acceso público a perfiles básicos de miembros o node leaders
+ */
+Route::prefix('users')->group(function () {
+    Route::get('/{id}', [UserController::class, 'show']);
+    Route::get('/username/{username}', [UserController::class, 'showByUsername']);
+});
+
 
 
 /**
