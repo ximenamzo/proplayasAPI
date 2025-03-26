@@ -9,7 +9,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CollaboratorController;
 use App\Http\Controllers\HomepageContentController;
 use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\NodeLeaderController;
 use App\Http\Controllers\NodeController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\UserController;
@@ -51,13 +50,6 @@ Route::get('/test-email', function () {
     $sent = MailService::sendMail('test@example.com', 'Prueba', 'Este es un correo de prueba');
     return response()->json(['success' => $sent]);
 });
-
-/** 🔹 ENDPOINT PARA VER TODOS LOS USUARIOS (SOLO EN DEV) */ 
-if (app()->environment() === 'local') {
-    Route::get('/users', [UserController::class, 'index']);
-}
-
-
 
 
 /**-------------------------------------------------------------------------
@@ -171,21 +163,35 @@ Route::prefix('nodes')->group(function () {
 
 
 /**
- * 🔹 USERS (PERFILES PÚBLICOS POR ID O USERNAME)
+ * 🔹 CRUD: USERS (NODE LEADERS Y MIEMBROS)
  * Acceso público a perfiles básicos de miembros o node leaders
  */
 Route::prefix('users')->group(function () {
-    Route::get('/{id}', [UserController::class, 'show']);
-    Route::get('/username/{username}', [UserController::class, 'showByUsername']);
+    // Dev: listar todos los usuarios (solo local)
+    Route::get('/', [UserController::class, 'index']);
+
+    // Obtener usuario por ID o username (público o autenticado)
+    Route::get('/{identifier}', [UserController::class, 'show']);
+
+    // Listar miembros por ID o código de nodo
+    Route::get('/node/{identifier}', [UserController::class, 'listByNode']);
+
+    // 🔹 ADMIN: Ver todos los miembros del sistema (ordenados por nodo)
+    Route::middleware('jwt.auth')->get('/pp/all-members', [UserController::class, 'listAllMembers']);
+
+    // Requieren autenticación (JWT)
+    Route::middleware('jwt.auth')->group(function () {
+        Route::put('/{id}', [UserController::class, 'update']);
+        Route::delete('/{id}', [UserController::class, 'destroy']);
+    });
 });
 
 
-
-/**
+/** TAL VEZ SE ELIMINEN... SE MANTENIEN TEMPORALMENTE
  * 🔹 CRUD: MIEMBROS
  * Aquí van las rutas para gestionar los miembros de nodos.
  */
-Route::prefix('members')->group(function () {
+/*Route::prefix('members')->group(function () {
     Route::get('/', [MemberController::class, 'index']); // Ver todos los miembros
     Route::get('/{id}', [MemberController::class, 'show']); // Ver un miembro
 
@@ -199,7 +205,7 @@ Route::prefix('members')->group(function () {
         // Invitación a miembro
         Route::post('/invite', [InvitationController::class, 'inviteMember']);
     });
-});
+});*/
 
 
 /**----------------------------------------------------------------------------
