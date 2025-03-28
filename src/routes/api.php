@@ -191,7 +191,7 @@ Route::prefix('users')->group(function () {
  * 🔹 CRUD: MIEMBROS
  * Aquí van las rutas para gestionar los miembros de nodos.
  */
-/*Route::prefix('members')->group(function () {
+Route::prefix('members')->group(function () {
     Route::get('/', [MemberController::class, 'index']); // Ver todos los miembros
     Route::get('/{id}', [MemberController::class, 'show']); // Ver un miembro
 
@@ -205,7 +205,7 @@ Route::prefix('users')->group(function () {
         // Invitación a miembro
         Route::post('/invite', [InvitationController::class, 'inviteMember']);
     });
-});*/
+});
 
 
 /**----------------------------------------------------------------------------
