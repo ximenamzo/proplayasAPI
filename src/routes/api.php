@@ -150,6 +150,7 @@ Route::prefix('nodes')->group(function () {
     Route::get('/', [NodeController::class, 'index']); // Ver todos los nodos
     Route::get('/{id}', [NodeController::class, 'show']); // Ver un nodo
     Route::get('/code/{code}', [NodeController::class, 'showByCode']); // Ver un nodo por su código
+    Route::get('/members/{identifier}', [UserController::class, 'listByNode']);// Listar miembros por ID o código de nodo
 
     Route::middleware(['jwt.auth'])->group(function () {
         Route::put('/{id}', [NodeController::class, 'update']); // Node leader edita su nodo
@@ -174,7 +175,7 @@ Route::prefix('users')->group(function () {
     Route::get('/{identifier}', [UserController::class, 'show']);
 
     // Listar miembros por ID o código de nodo
-    Route::get('/node/{identifier}', [UserController::class, 'listByNode']);
+    //Route::get('/node/{identifier}', [UserController::class, 'listByNode']);
 
     // 🔹 ADMIN: Ver todos los miembros del sistema (ordenados por nodo)
     Route::middleware('jwt.auth')->get('/pp/all-members', [UserController::class, 'listAllMembers']);
@@ -187,7 +188,7 @@ Route::prefix('users')->group(function () {
 });
 
 
-/** TAL VEZ SE ELIMINEN... SE MANTENIEN TEMPORALMENTE
+/** 
  * 🔹 CRUD: MIEMBROS
  * Aquí van las rutas para gestionar los miembros de nodos.
  */

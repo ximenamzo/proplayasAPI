@@ -97,46 +97,60 @@ class UserController extends Controller
             ], 404);
         }
 
-        $members = Member::with(['user' => function ($q) use ($authUser) {
-            $q->select(
-                'id', 'name', 'username', 'email', 'role', 'about', 
-                'degree', 'postgraduate', 'expertise_area', 'research_work', 
-                'profile_picture', 'social_media', 'status'
-            );
+        // Filtro según permisos
+        $onlyActive = !in_array($authUser?->role, ['admin', 'node_leader']);
 
-            // Solo admin o node leader puede ver usuarios inactivos
-            if (!in_array($authUser?->role, ['admin', 'node_leader'])) {
+        $members = Member::with(['user' => function ($q) use ($onlyActive) {
+            $q->select('id', 'name', 'username', 'email', 'expertise_area', 'research_work', 'status');
+            if ($onlyActive) {
                 $q->where('status', 'activo');
             }
         }])->where('node_id', $node->id)
           ->orderByRaw("CASE WHEN status = 'activo' THEN 0 ELSE 1 END")
           ->get();
 
-        // Obtener al líder del nodo
-        $leaderUser = User::select(
-            'id', 'name', 'username', 'email', 'role', 'about', 
-            'degree', 'postgraduate', 'expertise_area', 'research_work', 
-            'profile_picture', 'social_media', 'status'
-        )->find($node->leader_id);
+        $response = [];
 
-        // Solo incluirlo si está activo o si el autenticado es admin/node_leader
-        if ($leaderUser && (
-            $leaderUser->status === 'activo' || in_array($authUser?->role, ['admin', 'node_leader'])
-        )) {
-            $leaderAsMember = [
+        // Agregar líder del nodo como el primer "miembro"
+        $leaderUser = User::select('id', 'name', 'username', 'email', 'expertise_area', 'research_work', 'status')
+                          ->find($node->leader_id);
+
+        if ($leaderUser && ($leaderUser->status === 'activo' || !$onlyActive)) {
+            $response[] = [
+                'id' => null,
                 'user_id' => $leaderUser->id,
-                'member_code' => strtoupper($node->code) . ".00",
+                'node_id' => $node->id,
+                'member_code' => strtoupper($node->code) . '.00',
+                'name' => $leaderUser->name,
+                'email' => $leaderUser->email,
+                'username' => $leaderUser->username,
+                'research_line' => $leaderUser->expertise_area,
+                'work_area' => $leaderUser->research_work,
                 'status' => $leaderUser->status,
-                'user' => $leaderUser
             ];
+        }
 
-            // Insertarlo al inicio de la lista
-            $members->prepend((object) $leaderAsMember);
+        // Agregar miembros reales
+        foreach ($members as $m) {
+            if (!$m->user) continue;
+
+            $response[] = [
+                'id' => $m->id,
+                'user_id' => $m->user->id,
+                'node_id' => $m->node_id,
+                'member_code' => $m->member_code,
+                'name' => $m->user->name,
+                'email' => $m->user->email,
+                'username' => $m->user->username,
+                'research_line' => $m->user->expertise_area,
+                'work_area' => $m->user->research_work,
+                'status' => $m->user->status,
+            ];
         }
 
         return response()->json([
             'status' => 200,
-            'data' => $members
+            'data' => $response
         ]);
     }
 
