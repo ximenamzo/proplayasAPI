@@ -168,6 +168,7 @@ Route::prefix('nodes')->group(function () {
  * 🔹 CRUD: USERS (NODE LEADERS Y MIEMBROS)
  * Acceso público a perfiles básicos de miembros o node leaders
  */
+Route::middleware('jwt.auth')->get('/user/profile', [UserController::class, 'profile']);
 Route::prefix('users')->group(function () {
     // Dev: listar todos los usuarios (solo local)
     Route::get('/', [UserController::class, 'index']);

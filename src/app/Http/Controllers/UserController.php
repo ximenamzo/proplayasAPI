@@ -33,6 +33,23 @@ class UserController extends Controller
     }
 
 
+    /** 🔵 Obtener perfil del usuario autenticado */
+    public function profile(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Perfil del usuario autenticado',
+            'data' => $user->only([
+                'id', 'name', 'username', 'email', 'role', 'about',
+                'degree', 'postgraduate', 'expertise_area', 'research_work',
+                'profile_picture', 'social_media', 'status'
+            ])
+        ]);
+    }
+
+
     /** 🔵 Obtener un usuario por ID */
     public function show($id, Request $request)
     {
