@@ -13,6 +13,7 @@ use App\Http\Controllers\NodeController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\JWTMiddleware;
+use App\Http\Controllers\PublicationController;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -235,6 +236,18 @@ Route::prefix('collaborators')->group(function () {
 });
 
 /**
- * 🔹 CRUD: PUBLICACIONES (LIBROS, ARTÍCULOS, WEBSERIES, NEWS, WEBINARS)
+ * 🔹 CRUDs DE CONTENIDO (PUBLICACIONES, LIBROS, WEBSERIES, WEBINARS, NEWS)  
  * Aquí van las rutas para manejar contenido publicado en la plataforma.
  */
+
+ /** CRUD: PUBLICACIONES (boletines, guías, artículos) */
+Route::prefix('publications')->group(function () {
+    Route::get('/', [PublicationController::class, 'index']); // público y usuarios logueados
+    Route::get('/{id}', [PublicationController::class, 'show']); // ver detalle
+
+    Route::middleware('jwt.auth')->group(function () {
+        Route::post('/', [PublicationController::class, 'store']); // crear
+        Route::put('/{id}', [PublicationController::class, 'update']); // editar
+        Route::delete('/{id}', [PublicationController::class, 'destroy']); // eliminar (soft delete)
+    });
+});
