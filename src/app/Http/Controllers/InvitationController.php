@@ -266,17 +266,27 @@ class InvitationController extends Controller
         $request->validate([
             'token' => 'required|string',
             'password' => 'required|string|min:8',
-            'about' => 'string|nullable',
-            'degree' => 'string|nullable',
-            'postgraduate' => 'string|nullable',
-            'expertise_area' => 'string|nullable',
-            'research_work' => 'string|nullable',
-            'profile_picture' => 'string|nullable',
-            'social_media' => 'json|nullable',
-            'node_name' => 'string|nullable',
-            'about' => 'string|nullable',
-            'country' => 'string|nullable',
-            'city' => 'string|nullable'
+            'username' => 'string|nullable|max:255',
+            'about_user' => 'string|nullable',
+            'degree' => 'string|nullable|max:255',
+            'postgraduate' => 'string|nullable|max:255',
+            'expertise_area' => 'string|nullable|max:255',
+            'research_work' => 'string|nullable|max:255',
+            'profile_picture' => 'string|nullable|max:255',
+            'social_media' => 'array|nullable',
+
+            // Nodo
+            'node_name' => 'string|nullable|max:255',
+            'about_node' => 'string|nullable',
+            'country' => 'string|nullable|max:255',
+            'city' => 'string|nullable|max:255',
+            'profile_picture_node' => 'string|nullable|max:255',
+            'ip_address' => 'string|nullable|max:255',
+            'coordinates' => 'string|nullable|max:255',
+            'alt_places' => 'string|nullable',
+            'social_media_node' => 'array|nullable',
+            'id' => 'string|nullable|max:255',
+            'memorandum' => 'string|nullable|max:255',
         ]);
 
         // Decodificar el token
@@ -323,10 +333,11 @@ class InvitationController extends Controller
         // Crear el usuario 
         $user = User::create([
             'name' => $decoded->name,
+            'username' => $decoded->username ?? null,
             'email' => $decoded->email,
             'password' => Hash::make($decodedPassword),
             'role' => $role,
-            'about' => $request->about ?? null,
+            'about' => $request->about_user ?? null,
             'degree' => $request->degree ?? null,
             'postgraduate' => $request->postgraduate ?? null,
             'expertise_area' => $request->expertise_area ?? null,
@@ -353,9 +364,16 @@ class InvitationController extends Controller
                 'code' => $nodeCode,
                 'type' => $decoded->node_type,
                 'name' => $request->node_name,
-                'about' => $request->about,
+                'about' => $request->about_node,
                 'country' => $request->country,
                 'city' => $request->city,
+                'profile_picture' => $request->profile_picture_node ?? null,
+                'ip_address' => $request->ip_address ?? null,
+                'coordinates' => $request->coordinates ?? null,
+                'alt_places' => $request->alt_places ?? null,
+                'social_media' => $request->social_media_node ? json_decode(json_encode($request->social_media_node), true) : null,
+                'id' => $request->id ?? null,
+                'memorandum' => $request->memorandum ?? null,
                 'joined_in' => now()->year,
                 'status' => 'activo'
             ]);

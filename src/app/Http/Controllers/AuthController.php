@@ -18,21 +18,37 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'username' => 'string|nullable|max:255|unique:users',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|in:admin,node_leader,member',
+            'about' => 'string|nullable',
+            'degree' => 'string|nullable|max:255',
+            'postgraduate' => 'string|nullable|max:255',
+            'expertise_area' => 'string|nullable|max:255',
+            'research_work' => 'string|nullable|max:255',
+            'profile_picture' => 'string|nullable|max:255',
+            'social_media' => 'array|nullable',
         ]);
 
-        // Decodificar la contraseña base64
+        // Decodificar contraseña base64
         $decodedPassword = base64_decode($request->password);
 
-        // Crear usuario con contraseña hasheada
+        // Crear usuario
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($decodedPassword),
-            'role' => $request->role,
-            'status' => 'activo',
+            'name'             => $request->name,
+            'username'         => $request->username,
+            'email'            => $request->email,
+            'password'         => Hash::make($decodedPassword),
+            'role'             => $request->role,
+            'about'            => $request->about,
+            'degree'           => $request->degree,
+            'postgraduate'     => $request->postgraduate,
+            'expertise_area'   => $request->expertise_area,
+            'research_work'    => $request->research_work,
+            'profile_picture'  => $request->profile_picture,
+            'social_media'     => $request->social_media,
+            'status'           => 'activo',
         ]);
 
         // Asignar rol
@@ -41,14 +57,14 @@ class AuthController extends Controller
             $user->assignRole($role);
         } else {
             return response()->json([
-                'status' => 400, 
+                'status' => 400,
                 'error' => 'Role not found'
             ], 400);
         }
 
         return response()->json([
-            'status' => 201, 
-            'message' => 'User registered successfully', 
+            'status' => 201,
+            'message' => 'Usuario registrado con éxito',
             'data' => $user
         ], 201);
     }

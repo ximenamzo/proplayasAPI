@@ -250,12 +250,14 @@ class UserController extends Controller
         }
 
         $fields = [
-            'about', 'degree', 'postgraduate', 
+            'name', 'about', 
+            'degree', 'postgraduate',
             'expertise_area', 'research_work', 
             'profile_picture', 'social_media'
         ];
 
         $request->validate([
+            'name' => 'string|nullable|max:255',
             'about' => 'string|nullable',
             'degree' => 'string|nullable|max:255',
             'postgraduate' => 'string|nullable|max:255',
