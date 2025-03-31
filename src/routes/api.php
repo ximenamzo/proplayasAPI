@@ -147,10 +147,12 @@ Route::middleware(['jwt.auth'])->prefix('admins')->group(function () {
  * 🔹 CRUD: NODOS
  * Aquí van las rutas para gestionar los nodos (acceso según rol).
  */
-Route::prefix('nodes')->group(function () {
-    Route::get('/', [NodeController::class, 'index']); // Ver todos los nodos
-    Route::get('/{id}', [NodeController::class, 'show']); // Ver un nodo
-    Route::get('/code/{code}', [NodeController::class, 'showByCode']); // Ver un nodo por su código
+Route::get('/nodes', [NodeController::class, 'index']); // Ver todos los nodos
+
+Route::prefix('node')->group(function () {
+    //Route::get('/', [NodeController::class, 'index']); // Ver todos los nodos
+    Route::get('/{identifier}', [NodeController::class, 'show']); // Ver un nodo
+    //Route::get('/code/{code}', [NodeController::class, 'showByCode']); // Ver un nodo por su código
     Route::get('/members/{identifier}', [UserController::class, 'listByNode']);// Listar miembros por ID o código de nodo
 
     Route::middleware(['jwt.auth'])->group(function () {
@@ -168,22 +170,19 @@ Route::prefix('nodes')->group(function () {
  * 🔹 CRUD: USERS (NODE LEADERS Y MIEMBROS)
  * Acceso público a perfiles básicos de miembros o node leaders
  */
-Route::middleware('jwt.auth')->get('/user/profile', [UserController::class, 'profile']);
-Route::prefix('users')->group(function () {
-    // Dev: listar todos los usuarios (solo local)
-    Route::get('/', [UserController::class, 'index']);
 
+// Dev: listar todos los usuarios (solo local)
+Route::get('/users', [UserController::class, 'index']);
+// Listar filtrado por nodo (solo admin)
+Route::middleware('jwt.auth')->get('/usersByNode', [UserController::class, 'listAllMembers']);
+
+Route::prefix('user')->group(function () {
     // Obtener usuario por ID o username (público o autenticado)
     Route::get('/{identifier}', [UserController::class, 'show']);
-
-    // Listar miembros por ID o código de nodo
-    //Route::get('/node/{identifier}', [UserController::class, 'listByNode']);
-
-    // 🔹 ADMIN: Ver todos los miembros del sistema (ordenados por nodo)
-    Route::middleware('jwt.auth')->get('/pp/all-members', [UserController::class, 'listAllMembers']);
-
+    
     // Requieren autenticación (JWT)
     Route::middleware('jwt.auth')->group(function () {
+        Route::get('/profile', [UserController::class, 'profile']);
         Route::put('/{id}', [UserController::class, 'update']);
         Route::delete('/{id}', [UserController::class, 'destroy']);
     });
