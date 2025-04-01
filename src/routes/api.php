@@ -184,6 +184,7 @@ Route::prefix('user')->group(function () {
     Route::middleware('jwt.auth')->group(function () {
         Route::get('/profile', [UserController::class, 'profile']);
         Route::put('/{id}', [UserController::class, 'update']);
+        Route::put('/profile', [UserController::class, 'updateProfile']);
         Route::delete('/{id}', [UserController::class, 'destroy']);
     });
 });

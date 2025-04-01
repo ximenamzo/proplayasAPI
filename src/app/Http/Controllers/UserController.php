@@ -243,14 +243,56 @@ class UserController extends Controller
         ]);
     }
 
+    /** 🟠 Editar perfil propio usando solo el token */
+    public function updateProfile(Request $request)
+    {
+        $authUser = $request->user();
 
-    /** 🟠 Editar perfil propio (solo miembros y node_leaders) */
+        if (!$authUser) {
+            return response()->json([
+                'status' => 401,
+                'error' => 'Token inválido o usuario no autenticado'
+            ], 401);
+        }
+
+        $fields = [
+            'name', 'about', 
+            'degree', 'postgraduate',
+            'expertise_area', 'research_work', 
+            'profile_picture', 'social_media'
+        ];
+
+        $request->validate([
+            'name' => 'string|nullable|max:255',
+            'about' => 'string|nullable',
+            'degree' => 'string|nullable|max:255',
+            'postgraduate' => 'string|nullable|max:255',
+            'expertise_area' => 'string|nullable|max:255',
+            'research_work' => 'string|nullable|max:255',
+            'profile_picture' => 'string|nullable|max:255',
+            'social_media' => 'array|nullable'
+        ]);
+
+        $authUser->update($request->only($fields));
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Perfil actualizado correctamente',
+            'data' => $authUser->only([
+                'id', 'name', 'username', 'email', 'role', 'about', 
+                'degree', 'postgraduate', 'expertise_area', 'research_work', 
+                'profile_picture', 'social_media', 'status'
+            ])
+        ]);
+    }
+
+    /** 🟠 Editar perfil propio pasando id y token (para postman) */
     public function update(Request $request, $id)
     {
         Log::info("Intentando actualizar usuario ID: $id");
         $user = User::find($id);
 
-        if (!$user || !in_array($user->role, ['node_leader', 'member'])) {
+        if (!$user || !in_array($user->role, ['admin', 'node_leader', 'member'])) {
             return response()->json([
                 'status' => 404, 
                 'error' => 'Usuario no encontrado'
