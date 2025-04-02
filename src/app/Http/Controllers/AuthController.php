@@ -101,7 +101,7 @@ class AuthController extends Controller
             $nodeCode = Node::where('leader_id', $user->id)->value('code');
         } elseif ($user->role === 'member') {
             $node_id = Member::where('user_id', $user->id)->value('node_id');
-            $nodeCode = $nodeId ? Node::where('id', $nodeId)->value('code') : null;
+            $nodeCode = $node_id ? Node::where('id', $node_id)->value('code') : null; 
         }
 
         return response()->json([
