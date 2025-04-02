@@ -177,16 +177,16 @@ Route::get('/users', [UserController::class, 'index']);
 Route::middleware('jwt.auth')->get('/usersByNode', [UserController::class, 'listAllMembers']);
 
 Route::prefix('user')->group(function () {
-    // Obtener usuario por ID o username (público o autenticado)
-    Route::get('/{identifier}', [UserController::class, 'show']);
-    
     // Requieren autenticación (JWT)
     Route::middleware('jwt.auth')->group(function () {
         Route::get('/profile', [UserController::class, 'profile']);
-        Route::put('/{id}', [UserController::class, 'update']);
         Route::put('/profile', [UserController::class, 'updateProfile']);
+        Route::put('/{id}', [UserController::class, 'update']);
         Route::delete('/{id}', [UserController::class, 'destroy']);
     });
+    
+    // Obtener usuario por ID o username (público o autenticado)
+    Route::get('/{identifier}', [UserController::class, 'show']);
 });
 
 

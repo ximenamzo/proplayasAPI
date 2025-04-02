@@ -36,12 +36,30 @@ class UserController extends Controller
     /** 🔵 Obtener perfil del usuario autenticado */
     public function profile(Request $request)
     {
-        $user = $request->user();
+        Log::info("Request del profile: $request");
 
+        $user = $request->user();
+    
+        if (!$user) {
+            return response()->json([
+                'status' => 401,
+                'error' => 'Token inválido o usuario no autenticado'
+            ], 401);
+        }
+    
+        $userModel = User::where('id', $user->sub ?? $user->id)->first();
+    
+        if (!$userModel) {
+            return response()->json([
+                'status' => 404,
+                'error' => 'Usuario no encontrado'
+            ], 404);
+        }
+    
         return response()->json([
             'status' => 200,
             'message' => 'Perfil del usuario autenticado',
-            'data' => $user->only([
+            'data' => $userModel->only([
                 'id', 'name', 'username', 'email', 'role', 'about',
                 'degree', 'postgraduate', 'expertise_area', 'research_work',
                 'profile_picture', 'social_media', 'status'
