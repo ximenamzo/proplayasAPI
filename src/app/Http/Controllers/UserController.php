@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\JWTHandler;
+use App\Helpers\ApiResponse;
 use App\Models\User;
 use App\Models\Node;
 use App\Models\Member;
