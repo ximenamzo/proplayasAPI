@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\JWTHandler;
+use App\Helpers\ApiResponse;
 use App\Models\Invitation;
 use App\Models\User;
 use App\Models\Node;
@@ -43,18 +44,12 @@ class InvitationController extends Controller
 
         $user = $request->user(); // Asegurar que no sea null
         if (!$user || !isset($user->role)) {
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Usuario no autenticado correctamente'
-            ], 401);
+            return ApiResponse::unauthenticated('Usuario no autenticado correctamente', 401);
         }
         
         // Verificar si es admin
         if ($user->role !== 'admin') {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $request->validate([
@@ -87,11 +82,7 @@ class InvitationController extends Controller
 
         MailService::sendMail($request->email, 'Invitación a ProPlayas', $body);
 
-        return response()->json([
-            'status' => 201,
-            'message' => 'Invitación enviada con éxito',
-            'data' => $invitation
-        ], 201);
+        return ApiResponse::created('Invitación enviada con éxito', $invitation);
     }
 
 
@@ -102,17 +93,11 @@ class InvitationController extends Controller
 
         $user = $request->user(); // Asegurar que no sea null
         if (!$user || !isset($user->role)) {
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Usuario no autenticado correctamente'
-            ], 401);
+            return ApiResponse::unauthenticated('Usuario no autenticado correctamente', 401);
         }
         
         if ($user->role !== 'admin') {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $request->validate([
@@ -152,11 +137,7 @@ class InvitationController extends Controller
 
         MailService::sendMail($request->email, 'Invitación a ProPlayas', $body);
 
-        return response()->json([
-            'status' => 201,
-            'message' => 'Invitación enviada con éxito',
-            'data' => $invitation
-        ], 201);
+        return ApiResponse::created('Invitación enviada con éxito', $invitation);
     }
 
 
@@ -167,17 +148,11 @@ class InvitationController extends Controller
 
         $user = $request->user();
         if (!$user || !isset($user->role)) {
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Usuario no autenticado correctamente'
-            ], 401);
+            return ApiResponse::unauthenticated('Usuario no autenticado correctamente', 401);
         }
         
         if ($user->role !== 'node_leader') {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $request->validate([
@@ -192,10 +167,7 @@ class InvitationController extends Controller
         Log::info("Node ID obtenido:", ['node_id' => $node_id]);
 
         if (!$node_id) {
-            return response()->json([
-                'status' => 400, 
-                'error' => 'No se encontró el Node ID'
-            ], 400);
+            return ApiResponse::error('No se encontró el Node ID', 400);
         }
 
         // Crear objeto con los datos de la invitación
@@ -228,11 +200,7 @@ class InvitationController extends Controller
 
         MailService::sendMail($request->email, 'Invitación a ProPlayas', $body);
 
-        return response()->json([
-            'status' => 201,
-            'message' => 'Invitación enviada con éxito',
-            'data' => $invitation
-        ], 201);
+        return ApiResponse::created('Invitación enviada con éxito', $invitation);
     }
 
 
@@ -242,22 +210,16 @@ class InvitationController extends Controller
         $invitation = Invitation::where('token', $token)->first();
 
         if (!$invitation || $invitation->status !== 'pendiente' || now()->gt($invitation->expiration_date)) {
-            return response()->json([
-                'status' => 400, 
-                'error' => 'Token inválido o expirado'
-            ], 400);
+            return ApiResponse::error('Token inválido o expirado', 400);
         }
 
-        return response()->json([
-            'status' => 200, 
-            'message' => 'Token válido', 
-            'data' => [
-                'name' => $invitation->name,
-                'email' => $invitation->email,
-                'role_type' => $invitation->role_type,
-                'node_type' => $invitation->node_type ?? null,
-                'node_id' => $invitation->node_id ?? null
-            ]], 200);
+        return ApiResponse::success('Token válido', [
+            'name' => $invitation->name,
+            'email' => $invitation->email,
+            'role_type' => $invitation->role_type,
+            'node_type' => $invitation->node_type ?? null,
+            'node_id' => $invitation->node_id ?? null
+        ]);
     }
 
     /** Aceptar una invitación y registrar usuario y nodo */
@@ -277,15 +239,16 @@ class InvitationController extends Controller
 
             // Nodo
             'node_name' => 'string|nullable|max:255',
+            'profile_picture_node' => 'string|nullable|max:255',
             'about_node' => 'string|nullable',
             'country' => 'string|nullable|max:255',
             'city' => 'string|nullable|max:255',
-            'profile_picture_node' => 'string|nullable|max:255',
             'ip_address' => 'string|nullable|max:255',
             'coordinates' => 'string|nullable|max:255',
             'alt_places' => 'string|nullable',
-            'social_media_node' => 'array|nullable',
+            'joined_in' => 'nullable|integer|min:2000|max:' . now()->year,
             'id' => 'string|nullable|max:255',
+            'social_media_node' => 'array|nullable',
             'memorandum' => 'string|nullable|max:255',
         ]);
 
@@ -295,10 +258,7 @@ class InvitationController extends Controller
             Log::info("Token decodificado correctamente", (array) $decoded);
         } catch (Exception $e) {
             Log::error("Error al decodificar el token: " . $e->getMessage());
-            return response()->json([
-                'status' => 400,
-                'error' => 'Token inválido o expirado'
-            ], 400);
+            return ApiResponse::error('Token inválido o expirado', 400);
         }
 
         // Buscar la invitación asociada
@@ -309,19 +269,13 @@ class InvitationController extends Controller
         // Verificar si la invitación ya ha sido aceptada
         if (!$invitation) {
             Log::error("Invitación no encontrada o ya utilizada para: " . $decoded->email);
-            return response()->json([
-                'status' => 400,
-                'error' => 'Invitación no encontrada, expirada o ya utilizada.'
-            ], 400);
+            return ApiResponse::error('Invitación no encontrada, expirada o ya utilizada.', 400);
         }
         
         // Verificar si el usuario ya existe
         if (User::where('email', $decoded->email)->exists()) {
             Log::warning("Intento de registro con correo ya existente: " . $decoded->email);
-            return response()->json(
-                ['status' => 400, 
-                'error' => 'El correo ya está registrado'
-            ], 400);
+            return ApiResponse::error('El correo ya está registrado', 400);
         }
 
         // Decodificar la contraseña base64
@@ -355,7 +309,7 @@ class InvitationController extends Controller
             try {
                 $nodeCode = $this->generateNodeCode($decoded->node_type);
             } catch (\Exception $e) {
-                return response()->json(['status' => 400, 'error' => 'Tipo de nodo inválido.'], 400);
+                return ApiResponse::error('Tipo de nodo inválido.', 400);
             }
             
             // Crear el Nodo
@@ -364,17 +318,17 @@ class InvitationController extends Controller
                 'code' => $nodeCode,
                 'type' => $decoded->node_type,
                 'name' => $request->node_name,
+                'profile_picture' => $request->profile_picture_node ?? null,
                 'about' => $request->about_node,
                 'country' => $request->country,
                 'city' => $request->city,
-                'profile_picture' => $request->profile_picture_node ?? null,
                 'ip_address' => $request->ip_address ?? null,
                 'coordinates' => $request->coordinates ?? null,
                 'alt_places' => $request->alt_places ?? null,
-                'social_media' => $request->social_media_node ? json_decode(json_encode($request->social_media_node), true) : null,
+                'joined_in' => $request->joined_in ?? now()->year,  
                 'id' => $request->id ?? null,
+                'social_media' => $request->social_media_node ? json_decode(json_encode($request->social_media_node), true) : null,
                 'memorandum' => $request->memorandum ?? null,
-                'joined_in' => now()->year,
                 'status' => 'activo'
             ]);
     
@@ -384,10 +338,7 @@ class InvitationController extends Controller
             $node_id = $decoded->node_id;
 
             if (!$node_id) {
-                return response()->json([
-                    'status' => 400,
-                    'error' => 'No se pudo determinar el nodo'
-                ], 400);
+                return ApiResponse::error('No se pudo determinar el nodo', 400);
             }
 
             // Generar codigo de miembro
@@ -411,13 +362,9 @@ class InvitationController extends Controller
             'accepted_date' => now()
         ]);
 
-        return response()->json([
-            'status' => 201,
-            'message' => 'Registro exitoso.',
-            'data' => [
-                'user' => $user, 
-                'node' => $node
-            ]
-        ], 201);
+        return ApiResponse::created('Registro exitoso.', [
+            'user' => $user, 
+            'node' => $node
+        ]);
     }
 }

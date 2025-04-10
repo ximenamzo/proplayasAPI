@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Publication;
+use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -43,10 +44,7 @@ class PublicationController extends Controller
                 : null
         ]);
 
-        return response()->json([
-            'status' => 200,
-            'data' => $publications
-        ]);
+        return ApiResponse::success('Lista de publicaciones obtenida', $publications);
     }
 
     /** 🔵 Ver detalle de publicación */
@@ -58,39 +56,30 @@ class PublicationController extends Controller
         $publication = Publication::with(['author:id,name,username,email,role,status'])->find($id);
     
         if (!$publication) {
-            return response()->json([
-                'status' => 404,
-                'error' => 'Publicación no encontrada'
-            ], 404);
+            return ApiResponse::notFound('Publicación no encontrada', 404);
         }
     
         $isOwner = $authId === $publication->author_id;
         $isAdmin = $auth?->role === 'admin';
     
         if ($publication->status !== 'publico' && !$isOwner && !$isAdmin) {
-            return response()->json([
-                'status' => 403,
-                'error' => 'No autorizado para ver esta publicación'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized: No autorizado para ver esta publicación', 403);
         }
     
-        return response()->json([
-            'status' => 200,
-            'data' => [
-                'id' => $publication->id,
-                'type' => $publication->type,
-                'title' => $publication->title,
-                'description' => $publication->description,
-                'link' => $publication->link,
-                'doi' => $publication->doi,
-                'issn' => $publication->issn,
-                'file_path' => $publication->file_path,
-                'cover_image' => $publication->cover_image,
-                'author_id' => $publication->author_id,
-                'author' => $publication->author
-                    ? collect($publication->author)->only(['id', 'name', 'username', 'email', 'role', 'status'])
-                    : null
-            ]
+        return ApiResponse::success('Detalle de publicación obtenida', [
+            'id' => $publication->id,
+            'type' => $publication->type,
+            'title' => $publication->title,
+            'description' => $publication->description,
+            'link' => $publication->link,
+            'doi' => $publication->doi,
+            'issn' => $publication->issn,
+            'file_path' => $publication->file_path,
+            'cover_image' => $publication->cover_image,
+            'author_id' => $publication->author_id,
+            'author' => $publication->author
+                ? collect($publication->author)->only(['id', 'name', 'username', 'email', 'role', 'status'])
+                : null
         ]);
     }
 
@@ -119,11 +108,7 @@ class PublicationController extends Controller
             'status' => 'publico'
         ]);
 
-        return response()->json([
-            'status' => 201,
-            'message' => 'Publicación creada exitosamente',
-            'data' => $publication
-        ]);
+        return ApiResponse::created('Publicación creada exitosamente', $publication);        
     }
 
     /** 🟠 Editar una publicación (solo autor o admin) */
@@ -133,11 +118,11 @@ class PublicationController extends Controller
         $publication = Publication::find($id);
 
         if (!$publication) {
-            return response()->json(['status' => 404, 'error' => 'Publicación no encontrada'], 404);
+            return ApiResponse::notFound('Publicación no encontrada', 404);
         }
 
         if (($user->sub ?? $user->id) !== $publication->author_id && $user->role !== 'admin') {
-            return response()->json(['status' => 403, 'error' => 'No autorizado'], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $request->validate([
@@ -156,11 +141,7 @@ class PublicationController extends Controller
             'file_path', 'cover_image', 'status'
         ]));
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Publicación actualizada correctamente',
-            'data' => $publication
-        ]);
+        return ApiResponse::success('Publicación actualizada correctamente', $publication);
     }
 
     /** 🔴 Eliminar publicación (solo autor o admin) */
@@ -170,24 +151,15 @@ class PublicationController extends Controller
         $publication = Publication::find($id);
 
         if (!$publication) {
-            return response()->json([
-                'status' => 404, 
-                'error' => 'Publicación no encontrada'
-            ], 404);
+            return ApiResponse::notFound('Publicación no encontrada', 404);
         }
 
         if (($user->sub ?? $user->id) !== $publication->author_id && $user->role !== 'admin') {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'No autorizado'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $publication->delete();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Publicación eliminada correctamente'
-        ]);
+        return ApiResponse::success('Publicación eliminada correctamente', $publication);
     }
 }

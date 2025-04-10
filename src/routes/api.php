@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Models\Node;
 use App\Models\Member;
 use App\Helpers\JWTHandler;
+use App\Helpers\ApiResponse;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CollaboratorController;
@@ -40,16 +41,13 @@ use Spatie\Permission\Models\Role;
 
 // Ruta pública para comprobar que la API funciona
 Route::get('/test', function () {
-    return response()->json([
-        'status' => 200, 
-        'message' => 'API is working!'
-    ], 200);
+    return ApiResponse::success('API is working!');
 });
 
 // Ruta pública para enviar un correo de prueba
 Route::get('/test-email', function () {
     $sent = MailService::sendMail('test@example.com', 'Prueba', 'Este es un correo de prueba');
-    return response()->json(['success' => $sent]);
+    return ApiResponse::success('Success: Email sent', $sent);
 });
 
 
@@ -72,39 +70,20 @@ Route::middleware('jwt.auth')->post('/logout-all', [AuthController::class, 'logo
 Route::middleware('jwt.auth')->group(function () {
     Route::get('/admin-dashboard', function (Request $request) {
         return $request->user->role === 'admin'
-            ? response()->json([
-                'status' => 200, 
-                'message' => 'Bienvenido Admin'
-                ])
-            : response()->json([
-                'status' => 403, 
-                'error' => 
-                'Unauthorized'
-            ], 403);
+            ? ApiResponse::success('Bienvenido Admin')
+            : ApiResponse::unauthorized();
     });
 
     Route::get('/node-dashboard', function (Request $request) {
         return $request->user->role === 'node_leader'
-            ? response()->json([
-                'status' => 200, 
-                'message' => 'Bienvenido Líder de Nodo'
-                ])
-            : response()->json([
-                'status' => 403, 
-                'error' => 'Unauthorized'
-            ], 403);
+            ? ApiResponse::success('Bienvenido Líder de Nodo')
+            : ApiResponse::unauthorized();
     });
 
     Route::get('/member-dashboard', function (Request $request) {
         return $request->user->role === 'member'
-            ? response()->json([
-                'status' => 200, 
-                'message' => 'Bienvenido Miembro'
-                ])
-            : response()->json([
-                'status' => 403, 
-                'error' => 'Unauthorized'
-            ], 403);
+            ? ApiResponse::success('Bienvenido Miembro')
+            : ApiResponse::unauthorized();
     });
 });
 

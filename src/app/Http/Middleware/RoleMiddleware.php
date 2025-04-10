@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 //use Symfony\Component\HttpFoundation\Response;
@@ -18,7 +19,7 @@ class RoleMiddleware
     public function handle(Request $request, Closure $next, $role)
     {
         if (!Auth::check() || !$request->user()->hasRole($role)) {
-            return response()->json(['message' => 'Forbidden'], 403);
+            return ApiResponse::unauthorized('Unauthorized: Forbidden', 403);
         }
 
         return $next($request);

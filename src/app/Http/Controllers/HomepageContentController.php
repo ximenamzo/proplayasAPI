@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\HomePageContent;
+use App\Helpers\ApiResponse;
 
 class HomepageContentController extends Controller
 {
@@ -19,11 +20,7 @@ class HomepageContentController extends Controller
      */
     public function index()
     {
-        return response()->json([
-            'status' => 200,
-            'message' => 'Contenido del homepage obtenido',
-            'data' => HomePageContent::all()
-        ], 200);
+        return ApiResponse::success('Contenido del homepage obtenido', HomePageContent::all());
     }
 
     /**
@@ -34,14 +31,8 @@ class HomepageContentController extends Controller
         $section = HomepageContent::find($id);
 
         return $section
-        ? response()->json([
-            'status' => 200, 
-            'data' => $section
-        ], 200)
-        : response()->json([
-            'status' => 404, 
-            'error' => 'Sección no encontrada'
-        ], 404);
+            ? ApiResponse::success('Sección encontrada', $section)
+            : ApiResponse::notFound('Sección no encontrada');
 }
 
     /**
@@ -50,10 +41,7 @@ class HomepageContentController extends Controller
     public function store(Request $request)
     {
         if ($request->user->role !== 'admin') {
-            return response()->json([
-                'status' => 403,
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $validated = $request->validate([
@@ -63,11 +51,7 @@ class HomepageContentController extends Controller
 
         $section = HomePageContent::create($validated);
 
-        return response()->json([
-            'status' => 201, 
-            'message' => 'Sección creada', 
-            'data' => $section
-        ], 201);
+        return ApiResponse::created('Sección creada correctamente', $section);
     }
 
     /**
@@ -78,17 +62,11 @@ class HomepageContentController extends Controller
         $section = HomePageContent::find($id);
     
         if (!$section) {
-            return response()->json([
-                'status' => 404, 
-                'error' => 'Sección no encontrada'
-            ], 404);
+            return ApiResponse::notFound('Sección no encontrada', 404);
         }
 
         if ($request->user->role !== 'admin') {
-            return response()->json([
-                'status' => 403,
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
     
         $validated = $request->validate([
@@ -98,11 +76,7 @@ class HomepageContentController extends Controller
 
         $section->update($validated);
     
-        return response()->json([
-            'status' => 200,
-            'message' => 'Sección actualizada correctamente',
-            'data' => $section
-        ], 200);
+        return ApiResponse::success('Sección actualizada correctamente', $section);
     }
 
     /**
@@ -113,24 +87,15 @@ class HomepageContentController extends Controller
         $section = HomePageContent::find($id);
 
         if (!$section) {
-            return response()->json([
-                'status' => 404, 
-                'error' => 'Sección no encontrada'
-            ], 404);
+            return ApiResponse::notFound('Sección no encontrada', 404);
         }
 
         if ($request->user->role !== 'admin') {
-            return response()->json([
-                'status' => 403,
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $section->delete();
 
-        return response()->json([
-            'status' => 200, 
-            'message' => 'Sección eliminada'
-        ], 200);
+        return ApiResponse::success('Sección eliminada correctamente', $section);
     }
 }

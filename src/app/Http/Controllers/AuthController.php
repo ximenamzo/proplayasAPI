@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Node;
 use App\Models\Member;
+use App\Helpers\ApiResponse;
 use App\Helpers\JWTHandler;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -56,17 +57,10 @@ class AuthController extends Controller
         if ($role) {
             $user->assignRole($role);
         } else {
-            return response()->json([
-                'status' => 400,
-                'error' => 'Role not found'
-            ], 400);
+            return ApiResponse::error('Role not found', 400);
         }
 
-        return response()->json([
-            'status' => 201,
-            'message' => 'Usuario registrado con éxito',
-            'data' => $user
-        ], 201);
+        return ApiResponse::created('Usuario registrado con éxito', $user);
     }
 
 
@@ -85,10 +79,7 @@ class AuthController extends Controller
         $decodedPassword = base64_decode($request->password);
 
         if (!$user || !Hash::check($decodedPassword, $user->password)) {
-            return response()->json([
-                'status' => 401,
-                'error' => 'Invalid credentials'
-            ], 401);
+            return ApiResponse::unauthenticated('Invalid credentials', 401);
         }
 
         $token = JWTHandler::createToken($user, $request);
@@ -104,15 +95,11 @@ class AuthController extends Controller
             $nodeCode = $node_id ? Node::where('id', $node_id)->value('code') : null; 
         }
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Login successful',
-            'data' => [
-                'token' => $token,
-                'role' => $user->role,
-                'node_id' => $nodeCode
-            ]
-        ], 200);
+        return ApiResponse::success('Login successful', [
+            'token' => $token,
+            'role' => $user->role,
+            'node_id' => $nodeCode
+        ]);
     }
 
 
@@ -123,18 +110,12 @@ class AuthController extends Controller
         $token = $request->bearerToken();
 
         if (!$token) {
-            return response()->json([
-                'status' => 400, 
-                'error' => 'Token not provided'
-            ], 400);
+            return ApiResponse::error('Token not provided', 400);
         }
 
         JWTHandler::invalidateToken($token);
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Logged out successfully'
-        ], 200);
+        return ApiResponse::success('Logged out successfully');
     }
 
     /** Logout de todas las sesiones */
@@ -142,9 +123,6 @@ class AuthController extends Controller
     {
         JWTHandler::invalidateAllSessions($request->user->sub);
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'All sessions logged out'
-        ], 200);
+        return ApiResponse::success('All sessions logged out');
     }
 }

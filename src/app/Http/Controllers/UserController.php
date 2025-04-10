@@ -17,19 +17,12 @@ class UserController extends Controller
     public function index()
     {
         if (app()->environment() !== 'local') {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'Este endpoint solo está disponible en entorno de desarrollo'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized: Este endpoint solo está disponible en entorno de desarrollo', 403);
         }
 
         $users = User::all();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Lista de usuarios obtenida',
-            'data' => $users
-        ]);
+        return ApiResponse::success('Lista de usuarios obtenida', $users);
     }
 
 
@@ -41,25 +34,17 @@ class UserController extends Controller
         $user = $request->user();
     
         if (!$user) {
-            return response()->json([
-                'status' => 401,
-                'error' => 'Token inválido o usuario no autenticado'
-            ], 401);
+            return ApiResponse::unauthenticated('Token inválido o usuario no autenticado', 401);
         }
     
         $userModel = User::where('id', $user->sub ?? $user->id)->first();
     
         if (!$userModel) {
-            return response()->json([
-                'status' => 404,
-                'error' => 'Usuario no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Usuario no encontrado', 404);
         }
     
-        return response()->json([
-            'status' => 200,
-            'message' => 'Perfil del usuario autenticado',
-            'data' => $userModel->only([
+        return ApiResponse::success('Perfil del usuario autenticado', [
+            $userModel->only([
                 'id', 'name', 'username', 'email', 'role', 'about',
                 'degree', 'postgraduate', 'expertise_area', 'research_work',
                 'profile_picture', 'social_media', 'status'
@@ -91,16 +76,10 @@ class UserController extends Controller
             ->first();
 
         if (!$user) {
-            return response()->json([
-                'status' => 404,
-                'error' => 'Usuario no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Usuario no encontrado', 404);
         }
 
-        return response()->json([
-            'status' => 200,
-            'data' => $user
-        ]);
+        return ApiResponse::success('Detalle del usuario obtenido correctamente', $user);
     }
 
 
@@ -126,10 +105,7 @@ class UserController extends Controller
             : Node::where('code', $identifier)->first();
 
         if (!$node) {
-            return response()->json([
-                'status' => 404, 
-                'error' => 'Nodo no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Nodo no encontrado', 404);
         }
 
         // Filtro según permisos
@@ -183,10 +159,7 @@ class UserController extends Controller
             ];
         }
 
-        return response()->json([
-            'status' => 200,
-            'data' => $response
-        ]);
+        return ApiResponse::success('Lista de miembros obtenida', $response);
     }
 
 
@@ -196,10 +169,7 @@ class UserController extends Controller
         $auth = $request->user();
 
         if (!$auth || $auth->role !== 'admin') {
-            return response()->json([
-                'status' => 403,
-                'error' => 'Solo los administradores pueden acceder a esta lista'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized: Solo los administradores pueden acceder a esta lista', 403);
         }
 
         $nodes = Node::with([
@@ -254,11 +224,7 @@ class UserController extends Controller
             ['status', 'asc'], // activo primero
         ])->values();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Miembros de ProPlayas listados correctamente',
-            'data' => $output
-        ]);
+        return ApiResponse::success('Miembros de ProPlayas listados correctamente', $output);
     }
 
     /** 🟠 Editar perfil propio usando solo el token */
@@ -267,10 +233,7 @@ class UserController extends Controller
         $authUser = $request->user();
 
         if (!$authUser) {
-            return response()->json([
-                'status' => 401,
-                'error' => 'Token inválido o usuario no autenticado'
-            ], 401);
+            return ApiResponse::unauthenticated('Token inválido o usuario no autenticado', 401);
         }
 
         $fields = [
@@ -293,15 +256,12 @@ class UserController extends Controller
 
         $authUser->update($request->only($fields));
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Perfil actualizado correctamente',
-            'data' => $authUser->only([
+        return ApiResponse::success('Perfil actualizado correctamente', $authUser->only([
                 'id', 'name', 'username', 'email', 'role', 'about', 
                 'degree', 'postgraduate', 'expertise_area', 'research_work', 
                 'profile_picture', 'social_media', 'status'
             ])
-        ]);
+        );
     }
 
     /** 🟠 Editar perfil propio pasando id y token (para postman) */
@@ -311,19 +271,13 @@ class UserController extends Controller
         $user = User::find($id);
 
         if (!$user || !in_array($user->role, ['admin', 'node_leader', 'member'])) {
-            return response()->json([
-                'status' => 404, 
-                'error' => 'Usuario no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Usuario no encontrado', 404);
         }
 
         $authId = $request->user()?->sub ?? $request->user()?->id;
 
         if ($authId !== $user->id) {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'Usuario no autorizado'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $fields = [
@@ -346,15 +300,12 @@ class UserController extends Controller
 
         $user->update($request->only($fields));
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Perfil actualizado correctamente',
-            'data' => $user->only([
+        return ApiResponse::success('Perfil actualizado correctamente', $user->only([
                 'id', 'name', 'username', 'email', 'role', 'about', 
                 'degree', 'postgraduate', 'expertise_area', 'research_work', 
                 'profile_picture', 'social_media', 'status'
             ])
-        ]);
+        );
     }
 
     
@@ -364,10 +315,7 @@ class UserController extends Controller
         $target = User::find($id);
 
         if (!$target || !in_array($target->role, ['node_leader', 'member'])) {
-            return response()->json([
-                'status' => 404, 
-                'error' => 'Usuario no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Usuario no encontrado', 404);
         }
 
         $auth = $request->user();
@@ -376,18 +324,12 @@ class UserController extends Controller
             ($target->role === 'node_leader' && $auth->role !== 'admin') ||
             ($target->role === 'member' && !in_array($auth->role, ['admin', 'node_leader']))
         ) {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'No autorizado'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $target->status = 'inactivo';
         $target->save();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Usuario desactivado correctamente'
-        ]);
+        return ApiResponse::success('Usuario desactivado correctamente', $target);
     }
 }

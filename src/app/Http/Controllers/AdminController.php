@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -14,31 +15,21 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         if (!in_array($request->user()->role, ['admin', 'node_leader', 'member'])) {
-            return response()->json([
-                'status' => 403,
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $admins = User::where('role', 'admin')
             ->select('id', 'name', 'email', 'degree', 'postgraduate', 'about')
             ->get();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Lista de administradores obtenida',
-            'data' => $admins
-        ]);
+        return ApiResponse::success('Lista de administradores obtenida', $admins);
     }
 
     /** OBTENER DETALLES UN SOLO ADMIN (CON ID) */
     public function show($id, Request $request)
     {
         if (!in_array($request->user()->role, ['admin', 'node_leader', 'member'])) {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $admin = User::where('id', $id)->where('role', 'admin')
@@ -46,17 +37,10 @@ class AdminController extends Controller
             ->first();
 
         if (!$admin) {
-            return response()->json([
-                'status' => 404, 
-                'error' => 'Admin no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Admin no encontrado', 404);
         }
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Detalles del administrador',
-            'data' => $admin
-        ]);
+        return ApiResponse::success('Detalles del administrador', $admin);
     }
 
     /** EDITAR INFO DEL ADMIN (SOLO ADMIN A SI MISMO) */
@@ -65,17 +49,11 @@ class AdminController extends Controller
         $admin = User::where('id', $id)->where('role', 'admin')->first();
 
         if (!$admin) {
-            return response()->json([
-                'status' => 404, 
-                'error' => 'Admin no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Admin no encontrado', 404);
         }
 
         if ($request->user()->id !== $admin->id) {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'No autorizado'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $request->validate([
@@ -91,20 +69,13 @@ class AdminController extends Controller
 
         // Verificar que la contraseña actual es correcta
         if (!Hash::check($decodedPassword, $admin->password)) {
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Contraseña incorrecta'
-            ], 401);
+            return ApiResponse::unauthenticated('Contraseña incorrecta', 401);
         }
 
         // Actualizar los datos permitidos
         $admin->update($request->only(['name', 'degree', 'postgraduate', 'about']));
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Perfil actualizado correctamente',
-            'data' => $admin
-        ]);
+        return ApiResponse::success('Perfil actualizado correctamente', $admin);
     }
 
     /**
@@ -113,23 +84,17 @@ class AdminController extends Controller
     public function destroy($id, Request $request)
     {
         if (app()->environment() !== 'local') {
-            return response()->json([
-                'status' => 403, 
-                'error' => 'Solo permitido en desarrollo'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized: Solo permitido en desarrollo', 403);
         }
 
         $admin = User::where('id', $id)->where('role', 'admin')->first();
 
         if (!$admin) {
-            return response()->json(['status' => 404, 'error' => 'Admin no encontrado'], 404);
+            return ApiResponse::notFound('Admin no encontrado', 404);
         }
 
         $admin->delete();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Administrador eliminado correctamente'
-        ]);
+        return ApiResponse::success('Administrador eliminado correctamente');
     }
 }

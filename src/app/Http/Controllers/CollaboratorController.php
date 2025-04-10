@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Collaborator;
+use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
 
 class CollaboratorController extends Controller
@@ -19,17 +20,10 @@ class CollaboratorController extends Controller
     public function index(Request $request)
     {
         if ($request->user->role !== 'admin') {
-            return response()->json([
-                'status' => 403,
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Lista de colaboradores obtenida',
-            'data' => Collaborator::all()
-        ], 200);
+        return ApiResponse::success('Lista de colaboradores obtenida', Collaborator::all());
     }
 
     /** 🟡 Registrar un nuevo colaborador (cualquier persona puede registrarse) */
@@ -49,11 +43,7 @@ class CollaboratorController extends Controller
             'status' => 'activo',
         ]);
 
-        return response()->json([
-            'status' => 201,
-            'message' => 'Colaborador registrado correctamente',
-            'data' => $collaborator
-        ], 201);
+        return ApiResponse::created('Colaborador registrado correctamente', $collaborator);
     }
 
     /** 🟠 Actualizar datos del colaborador (solo Admin) */
@@ -62,17 +52,11 @@ class CollaboratorController extends Controller
         $collaborator = Collaborator::find($id);
 
         if (!$collaborator) {
-            return response()->json([
-                'status' => 404,
-                'error' => 'Colaborador no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Colaborador no encontrado', 404);
         }
 
         if ($request->user->role !== 'admin') {
-            return response()->json([
-                'status' => 403,
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $validated = $request->validate([
@@ -82,11 +66,7 @@ class CollaboratorController extends Controller
 
         $collaborator->update($validated);
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Colaborador actualizado',
-            'data' => $collaborator
-        ], 200);
+        return ApiResponse::success('Datos de colaborador actualizados correctamente', $collaborator);
     }
 
     /** 🔴 Desactivar un colaborador en lugar de eliminar (soft delete) */
@@ -95,25 +75,16 @@ class CollaboratorController extends Controller
         $collaborator = Collaborator::find($id);
 
         if (!$collaborator) {
-            return response()->json([
-                'status' => 404,
-                'error' => 'Colaborador no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Colaborador no encontrado', 404);
         }
 
         if ($request->user->role !== 'admin') {
-            return response()->json([
-                'status' => 403,
-                'error' => 'Unauthorized'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
 
         $collaborator->update(['status' => 'inactivo']);
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Colaborador desactivado'
-        ], 200);
+        return ApiResponse::success('Colaborador desactivado correctamente', $collaborator);
     }
 
     /** 🟢 Permite que un colaborador se desuscriba del boletín */
@@ -124,17 +95,11 @@ class CollaboratorController extends Controller
         $collaborator = Collaborator::where('email', $validated['email'])->first();
 
         if (!$collaborator) {
-            return response()->json([
-                'status' => 404,
-                'error' => 'Correo no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Correo no encontrado', 404);
         }
 
         $collaborator->update(['subscription_status' => false]);
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Te has desuscrito del boletín'
-        ], 200);
+        return ApiResponse::success('Te has desuscrito del boletín', $collaborator);
     }
 }

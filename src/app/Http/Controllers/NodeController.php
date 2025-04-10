@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Node;
 use App\Models\Member;
+use App\Helpers\ApiResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Exception;
@@ -19,11 +20,7 @@ class NodeController extends Controller
                     'city', 'country', 'members_count', 'joined_in')
             ->get();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Lista de nodos obtenida',
-            'data' => $nodes
-        ]);
+        return ApiResponse::success('Lista de nodos obtenida', $nodes);
     }
     
     /** 🔵 Ver perfil de un nodo por ID o código (público) */
@@ -34,17 +31,10 @@ class NodeController extends Controller
             : Node::with(['leader:id,name,email,degree,postgraduate'])->where('code', $identifier)->first();
 
         if (!$node) {
-            return response()->json([
-                'status' => 404,
-                'error' => 'Nodo no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Nodo no encontrado', 404);
         }
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Detalle del nodo obtenido correctamente',
-            'data' => $node
-        ]);
+        return ApiResponse::success('Detalle del nodo obtenido correctamente', $node);
     }
 
 
@@ -56,10 +46,7 @@ class NodeController extends Controller
 
         if (!$node) {
             Log::warning("Nodo no encontrado con ID: $id");
-            return response()->json([
-                'status' => 404, 
-                'error' => 'Nodo no encontrado'
-            ], 404);
+            return ApiResponse::notFound('Nodo no encontrado', 404);
         }
 
         $user = $request->user();
@@ -67,26 +54,17 @@ class NodeController extends Controller
 
         if (!$user || !isset($user->id) || !isset($user->role)) {
             Log::error("No se pudo detectar el rol del usuario");
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Usuario no autenticado correctamente'
-            ], 401);
+            return ApiResponse::unauthenticated('Usuario no autenticado correctamente', 401);
         }
     
         if ($user->role !== 'node_leader') {
             Log::warning("Usuario con ID {$user->id} no es node_leader, es {$user->role}");
-            return response()->json([
-                'status' => 403, 
-                'error' => 'No autorizado'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
         
         if ($user->id != $node->leader_id) {
             Log::warning("Usuario con ID {$user->id} no es el líder del nodo ID $id");
-            return response()->json([
-                'status' => 403, 
-                'error' => 'No autorizado'
-            ], 403);
+            return ApiResponse::unauthorized('Unauthorized', 403);
         }
     
         Log::info("Validación de rol y propiedad del nodo aprobada");
@@ -110,38 +88,31 @@ class NodeController extends Controller
 
         Log::info("Nodo actualizado correctamente", ['node_id' => $node->id]);
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Nodo actualizado correctamente',
-            'data' => $node
-        ]);
+        return ApiResponse::success('Nodo actualizado correctamente', $node);
     }    
     
      /** 🔴 Admin elimina nodo (soft delete) */
      public function destroy(Request $request, $id)
      {
          if ($request->user()->role !== 'admin') {
-             return response()->json(['status' => 403, 'error' => 'Solo los admins pueden eliminar nodos'], 403);
+            return ApiResponse::unauthorized('Unauthorized: Solo los admins pueden eliminar nodos', 403);
          }
  
          $node = Node::find($id);
          if (!$node) {
-             return response()->json(['status' => 404, 'error' => 'Nodo no encontrado'], 404);
+            return ApiResponse::notFound('Nodo no encontrado', 404);
          }
  
          $node->update(['status' => 'inactivo']);
  
-         return response()->json([
-             'status' => 200,
-             'message' => 'Nodo desactivado correctamente'
-         ]);
+         return ApiResponse::success('Nodo desactivado correctamente', $node);
      }
  
      /** 🟠 Admin reasigna el líder de un nodo */
      public function reassignLeader(Request $request, $id)
      {
          if ($request->user()->role !== 'admin') {
-             return response()->json(['status' => 403, 'error' => 'Solo los admins pueden reasignar líderes'], 403);
+            return ApiResponse::unauthorized('Unauthorized: Solo los admins pueden reasignar líderes', 403);
          }
  
          $request->validate([
@@ -153,7 +124,7 @@ class NodeController extends Controller
          $newLeader = User::find($request->new_leader_id);
  
          if (!$newLeader || $newLeader->role !== 'member') {
-             return response()->json(['status' => 400, 'error' => 'El nuevo líder debe ser un miembro válido'], 400);
+            return ApiResponse::error('El nuevo líder debe ser un miembro válido', 400);
          }
  
          // Cambiar roles
@@ -161,10 +132,6 @@ class NodeController extends Controller
          $newLeader->update(['role' => 'node_leader']);
          $node->update(['leader_id' => $newLeader->id]);
  
-         return response()->json([
-             'status' => 200,
-             'message' => 'Líder del nodo reasignado correctamente',
-             'node' => $node
-         ]);
+         return ApiResponse::success('Líder del nodo reasignado correctamente', $node);
      }
 }

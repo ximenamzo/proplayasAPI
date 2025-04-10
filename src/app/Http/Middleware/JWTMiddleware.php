@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use App\Helpers\JWTHandler;
+use App\Helpers\ApiResponse;
 use Firebase\JWT\BeforeValidException;
 use Firebase\JWT\ExpiredException;
 use Firebase\JWT\SignatureInvalidException;
@@ -25,10 +26,7 @@ class JWTMiddleware
         $token = $request->bearerToken();
 
         if (!$token) {
-            return response()->json([
-                'status' => 401,
-                'error' => 'Token not provided'
-            ], 401);
+            return ApiResponse::unauthenticated('Token not provided', 401);
         }
 
         try {
@@ -45,37 +43,19 @@ class JWTMiddleware
 
             Log::info("Usuario autenticado en Middleware:", (array) $userObject);           
         } catch (ExpiredException $e) {
-            return response()->json([
-                'status' => 401,
-                'error' => 'Token expired'
-            ], 401);
+            return ApiResponse::unauthenticated('Token expired', 401);
         } catch (SignatureInvalidException $e) {
-            return response()->json([
-                'status' => 401,
-                'error' => 'Token signature invalid'
-            ], 401);
+            return ApiResponse::unauthenticated('Token signature invalid', 401);
         } catch (BeforeValidException $e) {
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Token not valid yet'
-            ], 401);
+            return ApiResponse::unauthenticated('Token not valid yet', 401);
         } catch (UnexpectedValueException $e) {
-            return response()->json([
-                'status' => 401,
-                'error' => 'Token structure invalid'
-            ], 401);
+            return ApiResponse::unauthenticated('Token structure invalid', 401);
         } catch (\Throwable $e) {
             Log::error("JWT decoding error: " . $e->getMessage());
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Token invalid'
-            ], 401);
+            return ApiResponse::unauthenticated('Token invalid', 401);
         } catch (Exception $e) {
             Log::error("Error al decodificar el token: " . $e->getMessage());
-            return response()->json([
-                'status' => 401,
-                'error' => 'Token invalid'
-            ], 401);
+            return ApiResponse::unauthenticated('Token invalid', 401);
         }
 
         return $next($request);

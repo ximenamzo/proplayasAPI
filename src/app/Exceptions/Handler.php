@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Helpers\ApiResponse;
 use Firebase\JWT\ExpiredException;
 use Firebase\JWT\SignatureInvalidException;
 use Firebase\JWT\BeforeValidException;
@@ -38,39 +39,27 @@ class Handler extends ExceptionHandler
     public function render($request, Throwable $exception)
     {
         if ($exception instanceof ExpiredException) {
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Token expirado'
-            ], 401);
+            return ApiResponse::unauthenticated('Token expirado', 401);
         }
 
         if ($exception instanceof SignatureInvalidException) {
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Firma de token inválida'
-            ], 401);
+            return ApiResponse::unauthenticated('Firma de token inválida', 401);
         }
 
         if ($exception instanceof BeforeValidException) {
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Token aún no es válido'
-            ], 401);
+            return ApiResponse::unauthenticated('Token no válido', 401);
         }
 
         if ($exception instanceof UnexpectedValueException) {
-            return response()->json([
-                'status' => 401, 
-                'error' => 'Token mal formado o inválido'
-            ], 401);
+            return ApiResponse::unauthenticated('Token mal formado o inválido', 401);
         }
 
         if ($exception instanceof UnexpectedValueException) {
-            return response()->json([
-                'status' => 401,
-                'error' => 'Token mal formado o inválido',
-                'debug' => app()->environment('local') ? $exception->getMessage() : null
-            ], 401);
+            return ApiResponse::error(
+                'Token mal formado o inválido',
+                401,
+                app()->environment('local') ? ['debug' => $exception->getMessage()] : null
+            );
         }
 
         return parent::render($request, $exception);
