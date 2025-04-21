@@ -284,10 +284,20 @@ class InvitationController extends Controller
         // Determinar el rol
         $role = $decoded->role_type;
 
+        // Si no se proporciona un username, usar el prefijo del correo
+        $username = $request->username ?? explode('@', $decoded->email)[0];
+        // Verificar si ya existe ese username y agregar sufijo incremental
+        $originalUsername = $username;
+        $counter = 1;
+        while (User::where('username', $username)->exists()) {
+            $username = $originalUsername . $counter;
+            $counter++;
+        }
+
         // Crear el usuario 
         $user = User::create([
             'name' => $decoded->name,
-            'username' => $decoded->username ?? null,
+            'username' => $username,
             'email' => $decoded->email,
             'password' => Hash::make($decodedPassword),
             'role' => $role,
@@ -363,7 +373,7 @@ class InvitationController extends Controller
         ]);
 
         return ApiResponse::created('Registro exitoso.', [
-            'user' => $user, 
+            'user' => $user->refresh(),
             'node' => $node
         ]);
     }
