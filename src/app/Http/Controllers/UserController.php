@@ -333,4 +333,39 @@ class UserController extends Controller
 
         return ApiResponse::success('Usuario desactivado correctamente', $target);
     }
+
+    /** 🟢 Reactivar usuario (toggle de inactivo a activo) */
+    public function reactivate($id, Request $request)
+    {
+        $target = User::find($id);
+
+        if (!$target || !in_array($target->role, ['node_leader', 'member'])) {
+            return ApiResponse::notFound('Usuario no encontrado');
+        }
+
+        $auth = $request->user();
+
+        // Validar permiso
+        if (
+            ($target->role === 'node_leader' && $auth->role !== 'admin') ||
+            ($target->role === 'member' && !in_array($auth->role, ['admin', 'node_leader']))
+        ) {
+            return ApiResponse::unauthorized('No autorizado para reactivar este usuario');
+        }
+
+        // Si es node_leader y no lidera el nodo del miembro
+        if ($auth->role === 'node_leader' && $target->role === 'member') {
+            $authNode = Node::where('leader_id', $auth->sub ?? $auth->id)->first();
+            $member = Member::where('user_id', $target->id)->first();
+            if (!$authNode || !$member || $authNode->id !== $member->node_id) {
+                return ApiResponse::unauthorized('No autorizado para reactivar este miembro');
+            }
+        }
+
+        // Reactivar usuario
+        $target->status = 'activo';
+        $target->save();
+
+        return ApiResponse::success('Usuario reactivado correctamente', $target);
+    }
 }

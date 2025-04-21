@@ -162,6 +162,7 @@ Route::prefix('user')->group(function () {
         Route::put('/profile', [UserController::class, 'updateProfile']);
         Route::put('/{id}', [UserController::class, 'update']);
         Route::delete('/{id}', [UserController::class, 'destroy']);
+        Route::put('/{id}/reactivate', [UserController::class, 'reactivate']);
     });
     
     // Obtener usuario por ID o username (público o autenticado)
