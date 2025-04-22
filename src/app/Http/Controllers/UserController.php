@@ -44,13 +44,13 @@ class UserController extends Controller
             return ApiResponse::notFound('Usuario no encontrado', 404);
         }
     
-        return ApiResponse::success('Perfil del usuario autenticado', [
+        return ApiResponse::success('Perfil del usuario autenticado',
             $userModel->only([
                 'id', 'name', 'username', 'email', 'role', 'about',
                 'degree', 'postgraduate', 'expertise_area', 'research_work',
                 'profile_picture', 'social_media', 'status'
             ])
-        ]);
+        );
     }
 
 
