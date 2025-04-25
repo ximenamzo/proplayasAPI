@@ -60,6 +60,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('jwt.auth')->post('/logout', [AuthController::class, 'logout']);
 Route::middleware('jwt.auth')->post('/logout-all', [AuthController::class, 'logoutAll']);
+Route::middleware('jwt.auth')->post('/auth/refresh', [AuthController::class, 'refresh']);
 
 
 /**----------------------------------------------------------------

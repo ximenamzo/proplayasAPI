@@ -27,21 +27,24 @@ class JWTHandler
             // Si es una sesión real, se guarda en BD
             if ($request) {
                 $token = JWT::encode($payload, Config::get('jwt.secret'), 'HS256');
-                // INVALIDAR TOKENS ANTERIORES EN LA MISMA IP/NAVEGADOR
-                /*Session::where('user_id', $user->id)
+
+                // 🔹 INVALIDAR SESIONES PREVIAS DE MISMO USUARIO + MISMA IP Y USER AGENT
+                Session::where('user_id', $user->id)
                     ->where('ip_address', $request->ip())
                     ->where('user_agent', $request->header('User-Agent'))
                     ->delete();
-                    */
-                // ALMACENAR EL NUEVO TOKEN
+
+                // 🔹 CREAN NUEVA SESIÓN
                 Session::create([
                     'user_id' => $user->id,
                     'token' => $token,
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->header('User-Agent')
                 ]);
+
                 return $token;
             }
+            
         // Si es un token de invitacion
         } elseif ($isInvitation) {
             $payload['name'] = $user->name;

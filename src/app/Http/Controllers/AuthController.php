@@ -125,4 +125,23 @@ class AuthController extends Controller
 
         return ApiResponse::success('All sessions logged out');
     }
+
+    /** Refresh token */
+    public function refresh(Request $request)
+    {
+        try {
+            // Obtener el usuario autenticado desde el middleware
+            $user = $request->user();
+
+            // Crear nuevo token
+            $newToken = JWTHandler::createToken($user, $request);
+
+            return ApiResponse::success('Token refreshed successfully.', [
+                'token' => $newToken,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error refreshing token: ' . $e->getMessage());
+            return ApiResponse::error('Could not refresh token.', 500);
+        }
+    }
 }
