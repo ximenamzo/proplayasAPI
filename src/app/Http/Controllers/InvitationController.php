@@ -343,6 +343,16 @@ class InvitationController extends Controller
             ]);
     
             Log::info("Nodo registrado correctamente con ID: " . $node->id);
+
+            Member::create([
+                'user_id' => $user->id,
+                'node_id' => $node->id,
+                'member_code' => strtoupper($node->code) . '.00', // por ser primer miembro
+                'status' => 'activo'
+            ]);
+            
+            Log::info("Líder registrado también como miembro con código: " . strtoupper($node->code) . '.00');
+            
         } elseif ($role === 'member') {
             // Asignar el usuario como miembro de un nodo
             $node_id = $decoded->node_id;

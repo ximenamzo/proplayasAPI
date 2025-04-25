@@ -119,28 +119,10 @@ class UserController extends Controller
             }
         }])->where('node_id', $node->id)
           ->orderByRaw("CASE WHEN status = 'activo' THEN 0 ELSE 1 END")
+          ->orderBy('member_code')
           ->get();
 
         $response = [];
-
-        // Agregar líder del nodo como el primer "miembro"
-        $leaderUser = User::select('id', 'name', 'username', 'email', 'expertise_area', 'research_work', 'status')
-                          ->find($node->leader_id);
-
-        if ($leaderUser && ($leaderUser->status === 'activo' || !$onlyActive)) {
-            $response[] = [
-                'id' => null,
-                'user_id' => $leaderUser->id,
-                'node_id' => $node->id,
-                'member_code' => strtoupper($node->code) . '.00',
-                'name' => $leaderUser->name,
-                'email' => $leaderUser->email,
-                'username' => $leaderUser->username,
-                'research_line' => $leaderUser->expertise_area,
-                'work_area' => $leaderUser->research_work,
-                'status' => $leaderUser->status,
-            ];
-        }
 
         // Agregar miembros reales
         foreach ($members as $m) {
