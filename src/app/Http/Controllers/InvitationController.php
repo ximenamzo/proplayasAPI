@@ -335,7 +335,8 @@ class InvitationController extends Controller
                 'ip_address' => $request->ip_address ?? null,
                 'coordinates' => $request->coordinates ?? null,
                 'alt_places' => $request->alt_places ?? null,
-                'joined_in' => $request->joined_in ?? now()->year,  
+                'joined_in' => $request->joined_in ?? now()->year,
+                'members_count' => 1, // El líder es el primer miembro
                 'id' => $request->id ?? null,
                 'social_media' => $request->social_media_node ? json_decode(json_encode($request->social_media_node), true) : null,
                 'memorandum' => $request->memorandum ?? null,
@@ -372,6 +373,9 @@ class InvitationController extends Controller
                 'member_code' => strtoupper(Node::find($node_id)->code) . "." . $formattedCode,
                 'status' => 'activo'
             ]);
+
+            // Incrementar el contador de miembros en el nodo
+            Node::where('id', $node_id)->increment('members_count');
 
             Log::info("Miembro registrado en nodo ID: " . $node_id);
         }

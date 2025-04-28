@@ -137,9 +137,13 @@ class MemberController extends Controller
             }
         }
 
+        $nodeId = $member->node_id;
+
         $member->delete(); // Eliminar "fisica" de la fila en la tabla members
 
-        return ApiResponse::success('Miembro eliminado correctamente', $member);
+        Node::where('id', $nodeId)->decrement('members_count'); // Decrementar el contador de miembros del nodo
+
+        return ApiResponse::success('Miembro eliminado correctamente', null);
     }
 
 
