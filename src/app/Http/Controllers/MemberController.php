@@ -73,9 +73,78 @@ class MemberController extends Controller
             'new_node' => $newNode->name
         ]);
     }
+
+    /** 🟠 Activar o desactivar un miembro */
+    public function toggleStatus($id, Request $request) {
+        $member = Member::find($id);
     
+        if (!$member) {
+            return ApiResponse::notFound('Miembro no encontrado', 404);
+        }
+    
+        $auth = $request->user();
+        
+        if (!in_array($auth->role, ['admin', 'node_leader'])) {
+            return ApiResponse::unauthorized('Unauthorized', 403);
+        }
+
+        // Validar que si es node_leader, solo pueda editar miembros de su nodo
+        if ($auth->role === 'node_leader') {
+            $authNode = Node::where('leader_id', $auth->sub ?? $auth->id)->first();
+            if (!$authNode || $authNode->id !== $member->node_id) {
+                return ApiResponse::unauthorized('No autorizado para editar este miembro', 403);
+            }
+        }
+
+        $member->status = $member->status === 'activo' ? 'inactivo' : 'activo';
+        $member->save();
+
+        $user = $member->user;
+
+        return ApiResponse::success('Estado del miembro actualizado correctamente', [
+            'id' => $member->id,
+            'user_id' => $user->id,
+            'node_id' => $member->node_id,
+            'member_code' => $member->member_code,
+            'name' => $user->name,
+            'email' => $user->email,
+            'username' => $user->username,
+            'research_line' => $user->expertise_area,
+            'work_area' => $user->research_work,
+            'status' => $member->status,
+        ]);
+    }
+    
+
+    /** 🔴 Eliminar a miembro del nodo en el que está */
+    public function removeFromNode($id, Request $request) {
+        $member = Member::find($id);
+    
+        if (!$member) {
+            return ApiResponse::notFound('Miembro no encontrado', 404);
+        }
+    
+        $auth = $request->user();
+
+        if (!in_array($auth->role, ['admin', 'node_leader'])) {
+            return ApiResponse::unauthorized('Unauthorized', 403);
+        }
+
+        if ($auth->role === 'node_leader') {
+            $authNode = Node::where('leader_id', $auth->sub ?? $auth->id)->first();
+            if (!$authNode || $authNode->id !== $member->node_id) {
+                return ApiResponse::unauthorized('No autorizado para editar este miembro', 403);
+            }
+        }
+
+        $member->delete(); // Eliminar "fisica" de la fila en la tabla members
+
+        return ApiResponse::success('Miembro eliminado correctamente', $member);
+    }
+
+
     // Node Leader elimina miembro de su nodo
-    public function destroy($id, Request $request) {
+    /*public function destroy($id, Request $request) {
         $member = Member::find($id);
     
         if (!$member) {
@@ -88,5 +157,5 @@ class MemberController extends Controller
     
         $member->update(['status' => 'inactivo']);
         return ApiResponse::success('Miembro eliminado correctamente', $member);
-    }    
+    } */   
 }

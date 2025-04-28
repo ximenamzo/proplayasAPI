@@ -161,9 +161,9 @@ Route::prefix('user')->group(function () {
     Route::middleware('jwt.auth')->group(function () {
         Route::get('/profile', [UserController::class, 'profile']);
         Route::put('/profile', [UserController::class, 'updateProfile']);
-        Route::put('/{id}', [UserController::class, 'update']);
-        Route::delete('/{id}', [UserController::class, 'destroy']);
-        Route::put('/{id}/reactivate', [UserController::class, 'reactivate']);
+
+        Route::put('/{id}', [UserController::class, 'toggleStatus']); // Toggle activar/desactivar usuario
+        Route::delete('/{id}', [UserController::class, 'destroy']); // Eliminar usuario permanentemente
     });
     
     // Obtener usuario por ID o username (público o autenticado)
@@ -175,13 +175,13 @@ Route::prefix('user')->group(function () {
  * 🔹 CRUD: MIEMBROS
  * Aquí van las rutas para gestionar los miembros de nodos.
  */
-Route::prefix('members')->group(function () {
-    Route::get('/', [MemberController::class, 'index']); // Ver todos los miembros
-    Route::get('/{id}', [MemberController::class, 'show']); // Ver un miembro
+Route::prefix('member')->group(function () {
+    Route::get('/', [MemberController::class, 'index']); // Ver todos los miembros !
+    Route::get('/{id}', [MemberController::class, 'show']); // Ver un miembro !
 
     Route::middleware(['jwt.auth'])->group(function () {
-        Route::put('/{id}', [MemberController::class, 'update']);
-        Route::delete('/{id}', [MemberController::class, 'destroy']);
+        Route::put('/{id}', [MemberController::class, 'toggleStatus']); // Toggle activar/desactivar miembro
+        Route::delete('/{id}', [MemberController::class, 'removeFromNode']); // Eliminar al miembro de su nodo
 
         // Admin reasigna un miembro a otro nodo
         Route::put('/{id}/reassign', [MemberController::class, 'reassignNode']);
