@@ -15,6 +15,7 @@ use App\Http\Controllers\MemberController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\JWTMiddleware;
 use App\Http\Controllers\PublicationController;
+use App\Http\Controllers\WebinarController;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -175,8 +176,8 @@ Route::prefix('user')->group(function () {
  * 🔹 CRUD: MIEMBROS
  * Aquí van las rutas para gestionar los miembros de nodos.
  */
+Route::get('/members', [MemberController::class, 'index']); // Ver todos los miembros !
 Route::prefix('member')->group(function () {
-    Route::get('/', [MemberController::class, 'index']); // Ver todos los miembros !
     Route::get('/{id}', [MemberController::class, 'show']); // Ver un miembro !
 
     Route::middleware(['jwt.auth'])->group(function () {
@@ -222,14 +223,33 @@ Route::prefix('collaborators')->group(function () {
  * Aquí van las rutas para manejar contenido publicado en la plataforma.
  */
 
- /** CRUD: PUBLICACIONES (boletines, guías, artículos) */
-Route::prefix('publications')->group(function () {
-    Route::get('/', [PublicationController::class, 'index']); // público y usuarios logueados
-    Route::get('/{id}', [PublicationController::class, 'show']); // ver detalle
+/** CRUD: PUBLICACIONES (boletines, guías, artículos) */
+Route::get('/publications', [PublicationController::class, 'index']); // público y usuarios logueados
+
+Route::prefix('publication')->group(function () {
 
     Route::middleware('jwt.auth')->group(function () {
         Route::post('/', [PublicationController::class, 'store']); // crear
+        Route::put('/{id}/toggle-status', [PublicationController::class, 'toggleStatus']); // alternar público/archivado
         Route::put('/{id}', [PublicationController::class, 'update']); // editar
-        Route::delete('/{id}', [PublicationController::class, 'destroy']); // eliminar (soft delete)
+        Route::delete('/{id}', [PublicationController::class, 'destroy']); // eliminación permanente
     });
+
+    Route::get('/{id}', [PublicationController::class, 'show']); // ver detalle
+});
+
+
+/** CRUD: WEBINARS (eventos, charlas, sesiones) */
+Route::get('/webinars', [WebinarController::class, 'index']); // público y usuarios logueados
+
+Route::prefix('webinar')->group(function () {
+
+    Route::middleware('jwt.auth')->group(function () {
+        Route::post('/', [WebinarController::class, 'store']); // crear
+        Route::put('/{id}/toggle-status', [WebinarController::class, 'toggleStatus']); // alternar público/archivado
+        Route::put('/{id}', [WebinarController::class, 'update']); // editar
+        Route::delete('/{id}', [WebinarController::class, 'destroy']); // eliminación permanente
+    });
+    
+    Route::get('/{id}', [WebinarController::class, 'show']); // ver detalle
 });
