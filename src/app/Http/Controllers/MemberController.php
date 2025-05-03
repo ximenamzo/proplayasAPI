@@ -47,33 +47,58 @@ class MemberController extends Controller
         return ApiResponse::success('Perfil actualizado correctamente', $member);
     }
 
+    /** 🟠 Reasignar un miembro a otro o nuevo nodo */
     public function reassignNode(Request $request, $id)
     {
         if ($request->user->role !== 'admin') {
             return ApiResponse::unauthorized('Unauthorized', 403);
         }
-
+    
         $request->validate([
             'new_node_id' => 'required|exists:nodes,id'
         ]);
-
-        $member = Member::where('user_id', $id)->first();
-        
-        if (!$member) {
-            return ApiResponse::notFound('Miembro no encontrado', 404);
+    
+        $user = User::find($id);
+    
+        if (!$user || $user->role !== 'member') {
+            return ApiResponse::notFound('Usuario no válido para reasignación', 404);
         }
-
-        $oldNode = Node::find($member->node_id);
+    
         $newNode = Node::find($request->new_node_id);
-
-        $member->update(['node_id' => $request->new_node_id]);
-
+    
+        // Buscar si ya existe como miembro (aunque esté desactivado)
+        $member = Member::where('user_id', $id)->first();
+    
+        if ($member) {
+            $oldNode = Node::find($member->node_id);
+            $member->update(['node_id' => $request->new_node_id]);
+        } else {
+            // Crear nueva membresía
+            $lastMember = Member::where('node_id', $newNode->id)->orderBy('id', 'desc')->first();
+            $lastCode = $lastMember ? intval(substr($lastMember->member_code, -2)) + 1 : 1;
+            $formattedCode = str_pad($lastCode, 2, '0', STR_PAD_LEFT);
+    
+            $member = Member::create([
+                'user_id' => $id,
+                'node_id' => $newNode->id,
+                'member_code' => strtoupper($newNode->code) . "." . $formattedCode,
+                'status' => 'activo',
+            ]);
+    
+            $oldNode = null; // no tenía nodo antes
+        }
+    
+        // Actualizar conteos
+        if ($oldNode) Node::where('id', $oldNode->id)->decrement('members_count');
+        Node::where('id', $newNode->id)->increment('members_count');
+    
         return ApiResponse::success('Miembro reasignado correctamente', [
-            'old_node' => $oldNode->name,
+            'old_node' => $oldNode?->name ?? 'Sin nodo',
             'new_node' => $newNode->name
         ]);
     }
 
+    
     /** 🟠 Activar o desactivar un miembro */
     public function toggleStatus($id, Request $request) {
         $member = Member::find($id);
