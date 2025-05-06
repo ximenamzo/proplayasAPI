@@ -8,6 +8,7 @@ use App\Models\Invitation;
 use App\Models\User;
 use App\Models\Node;
 use App\Models\Member;
+use App\Services\FileUploadService;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -294,6 +295,14 @@ class InvitationController extends Controller
             $counter++;
         }
 
+        // Manejar imagen de perfil si se envía como archivo o como url
+        $profilePicturePath = null;
+        if ($request->hasFile('profile_picture_file')) {
+            $profilePicturePath = FileUploadService::uploadImage($request->file('profile_picture_file'), 'profiles');
+        } elseif ($request->filled('profile_picture')) {
+            $profilePicturePath = $request->profile_picture;
+        }
+
         // Crear el usuario 
         $user = User::create([
             'name' => $decoded->name,
@@ -306,7 +315,7 @@ class InvitationController extends Controller
             'postgraduate' => $request->postgraduate ?? null,
             'expertise_area' => $request->expertise_area ?? null,
             'research_work' => $request->research_work ?? null,
-            'profile_picture' => $request->profile_picture ?? null,
+            'profile_picture' => $profilePicturePath ?? null,
             'social_media' => $request->social_media ? json_decode($request->social_media, true) : null,
             'status' => 'activo'
         ]);
@@ -321,6 +330,13 @@ class InvitationController extends Controller
             } catch (\Exception $e) {
                 return ApiResponse::error('Tipo de nodo inválido.', 400);
             }
+
+            $nodeProfilePicture = null;
+            if ($request->hasFile('profile_picture_node_file')) {
+                $nodeProfilePicture = FileUploadService::uploadImage($request->file('profile_picture_node_file'), 'nodes');
+            } elseif ($request->filled('profile_picture_node')) {
+                $nodeProfilePicture = $request->profile_picture_node;
+            }
             
             // Crear el Nodo
             $node = Node::create([
@@ -328,7 +344,7 @@ class InvitationController extends Controller
                 'code' => $nodeCode,
                 'type' => $decoded->node_type,
                 'name' => $request->node_name,
-                'profile_picture' => $request->profile_picture_node ?? null,
+                'profile_picture' => $nodeProfilePicture ?? null,
                 'about' => $request->about_node,
                 'country' => $request->country,
                 'city' => $request->city,

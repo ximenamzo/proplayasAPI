@@ -7,6 +7,7 @@ use App\Helpers\ApiResponse;
 use App\Models\User;
 use App\Models\Node;
 use App\Models\Member;
+use App\Services\FileUploadService;
 use Firebase\JWT\ExpiredException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -236,6 +237,15 @@ class UserController extends Controller
             'profile_picture' => 'string|nullable|max:255',
             'social_media' => 'array|nullable'
         ]);
+
+        if ($request->hasFile('profile_picture_file')) {
+            $oldPath = $authUser->profile_picture;
+            $newPath = FileUploadService::uploadImage($request->file('profile_picture_file'), 'profiles', $oldPath);
+            $authUser->profile_picture = $newPath;
+        } elseif ($request->filled('profile_picture') && !$request->hasFile('profile_picture_file')) {
+            $authUser->profile_picture = $request->profile_picture; // URL externa
+        }
+        
 
         $authUser->update($request->only($fields));
 
