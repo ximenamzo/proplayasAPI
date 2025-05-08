@@ -237,17 +237,26 @@ class UserController extends Controller
             'profile_picture' => 'string|nullable|max:255',
             'social_media' => 'array|nullable'
         ]);
-
-        if ($request->hasFile('profile_picture_file')) {
-            $oldPath = $authUser->profile_picture;
-            $newPath = FileUploadService::uploadImage($request->file('profile_picture_file'), 'profiles', $oldPath);
-            $authUser->profile_picture = $newPath;
-        } elseif ($request->filled('profile_picture') && !$request->hasFile('profile_picture_file')) {
-            $authUser->profile_picture = $request->profile_picture; // URL externa
-        }
+            
         
+        foreach ($fields as $field) {
+            if ($request->has($field)) {
+                $authUser->$field = $request->$field;
+            }
+        }
+    
+        $authUser->save();
+        
+        Log::info('Datos actualizados de usuario:', $authUser->toArray());
+        Log::info('Request all:', $request->all());
+        Log::info('Has file:', ['profile_picture_file' => $request->hasFile('profile_picture_file')]);
+        Log::debug('FILES:', $request->allFiles());
+        Log::debug('IS FILE?', ['has_file' => $request->hasFile('profile_picture_file')]);
+        Log::debug('USER FINAL:', $authUser->toArray());
 
-        $authUser->update($request->only($fields));
+
+        
+        //$authUser->update($request->only($fields));
 
         return ApiResponse::success('Perfil actualizado correctamente', $authUser->only([
                 'id', 'name', 'username', 'email', 'role', 'about', 
@@ -256,6 +265,30 @@ class UserController extends Controller
             ])
         );
     }
+
+
+    /** 🟡 Subir imagen de perfil */
+    public function uploadProfilePicture(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,webp|max:2048'
+        ]);
+    
+        $user = $request->user();
+    
+        $oldPath = $user->profile_picture;
+        $newPath = FileUploadService::uploadImage($request->file('image'), 'profiles', $oldPath);
+    
+        $user->profile_picture = $newPath;
+        $user->save();
+    
+        return response()->json([
+            'message' => 'Imagen de perfil actualizada correctamente.',
+            'url' => asset($newPath),
+            'user' => $user->only(['id', 'name', 'profile_picture'])
+        ], 200);
+    }
+
 
     /** 🟠 Editar perfil propio pasando id y token (para postman) */
     public function update(Request $request, $id)

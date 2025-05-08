@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Publication;
 use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
+use App\Services\FileUploadService;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Validator;
 
 class PublicationController extends Controller
 {
@@ -61,19 +65,31 @@ class PublicationController extends Controller
             'doi' => 'nullable|string',
             'issn' => 'nullable|string',
             'file_path' => 'nullable|string',
-            'cover_image' => 'nullable|string',
+            'cover_image_file' => 'required|image|mimes:jpeg,png,webp|max:2048',
         ]);
 
-        $pub = Publication::create([
-            ...$request->only([
-                'type', 'title', 'description', 'link', 'doi', 
-                'issn', 'file_path', 'cover_image'
-            ]),
-            'author_id' => $request->user()->sub ?? $request->user()->id,
+        $user = $request->user();
+        $coverPath = null;
+
+        if ($request->hasFile('cover_image_file')) {
+            $coverPath = FileUploadService::uploadImage(
+                $request->file('cover_image_file'), 'covers');
+        }
+
+        $publication = Publication::create([
+            'type' => $request->type,
+            'title' => $request->title,
+            'description' => $request->description,
+            'link' => $request->link,
+            'doi' => $request->doi,
+            'issn' => $request->issn,
+            'file_path' => $request->file_path,
+            'cover_image' => $coverPath,
+            'author_id' => $user->id,
             'status' => 'publico'
-        ]);
+        ]);    
 
-        return ApiResponse::created('Publicación creada correctamente', $pub);
+        return ApiResponse::created('Publicación creada correctamente', $publication);
     }
 
     /** 🟠 Editar publicación */

@@ -6,6 +6,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Facades\Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class FileUploadService
 {
@@ -14,7 +16,10 @@ class FileUploadService
         $filename = Str::uuid() . '.webp';
         $path = "uploads/{$folder}/{$filename}";
 
-        $webp = Image::make($image)->encode('webp', 85);
+        // Nueva forma con Intervention v3
+        $manager = new ImageManager(new Driver());
+        $webp = $manager->read($image->getPathname())->toWebp(85);
+
         Storage::disk('public')->put($path, $webp);
 
         if ($oldPath) {
@@ -41,7 +46,6 @@ class FileUploadService
     public static function delete(?string $url): void
     {
         if (!$url) return;
-
         $relativePath = str_replace('storage/', '', $url);
         Storage::disk('public')->delete($relativePath);
     }

@@ -160,6 +160,7 @@ Route::middleware('jwt.auth')->get('/usersByNode', [UserController::class, 'list
 Route::prefix('user')->group(function () {
     // Requieren autenticación (JWT)
     Route::middleware('jwt.auth')->group(function () {
+        Route::post('/upload-profile-picture', [UserController::class, 'uploadProfilePicture']);
         Route::get('/profile', [UserController::class, 'profile']);
         Route::put('/profile', [UserController::class, 'updateProfile']);
 
