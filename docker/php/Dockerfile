@@ -31,5 +31,7 @@ RUN php artisan jwt:secret
 RUN chmod -R 775 storage bootstrap/cache
 RUN chown -R www-data:www-data storage bootstrap/cache
 
+COPY ./docker/php/php.ini /usr/local/etc/php/conf.d/php.ini
+
 # Exponer el puerto 9000 para PHP-FPMEXPOSE 9000
 EXPOSE 9000

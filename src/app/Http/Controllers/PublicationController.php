@@ -64,16 +64,25 @@ class PublicationController extends Controller
             'link' => 'nullable|url',
             'doi' => 'nullable|string',
             'issn' => 'nullable|string',
-            'file_path' => 'nullable|string',
-            'cover_image_file' => 'required|image|mimes:jpeg,png,webp|max:2048',
+            'cover_image_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'cover_image_url' => 'nullable|url',
+            'file_file' => 'nullable|file|mimes:pdf,docx,xlsx|max:10240',
+            'file_url' => 'nullable|url'
         ]);
 
-        $user = $request->user();
         $coverPath = null;
+        $filePath = null;
 
         if ($request->hasFile('cover_image_file')) {
-            $coverPath = FileUploadService::uploadImage(
-                $request->file('cover_image_file'), 'covers');
+            $coverPath = FileUploadService::uploadImage($request->file('cover_image_file'), 'covers');
+        } elseif ($request->filled('cover_image_url')) {
+            $coverPath = $request->input('cover_image_url');
+        }
+    
+        if ($request->hasFile('file_file')) {
+            $filePath = FileUploadService::uploadFile($request->file('file_file'), 'docs');
+        } elseif ($request->filled('file_url')) {
+            $filePath = $request->input('file_url');
         }
 
         $publication = Publication::create([
@@ -83,11 +92,11 @@ class PublicationController extends Controller
             'link' => $request->link,
             'doi' => $request->doi,
             'issn' => $request->issn,
-            'file_path' => $request->file_path,
+            'file_path' => $filePath,
             'cover_image' => $coverPath,
-            'author_id' => $user->id,
+            'author_id' => $request->user()->id,
             'status' => 'publico'
-        ]);    
+        ]); 
 
         return ApiResponse::created('Publicación creada correctamente', $publication);
     }
@@ -157,6 +166,15 @@ class PublicationController extends Controller
 
         if ($pub->author_id !== $authId && $auth->role !== 'admin') {
             return ApiResponse::unauthorized('No autorizado');
+        }
+
+        // Eliminar archivos SOLO si existen
+        if ($pub->cover_image) {
+            FileUploadService::delete($pub->cover_image);
+        }
+        
+        if ($pub->file_path) {
+            FileUploadService::delete($pub->file_path);
         }
 
         $pub->delete();

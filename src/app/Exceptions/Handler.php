@@ -62,6 +62,10 @@ class Handler extends ExceptionHandler
             );
         }
 
+        if ($exception instanceof PostTooLargeException) {
+            return ApiResponse::error('El archivo enviado excede el tamaño permitido.', 413);
+        }
+
         return parent::render($request, $exception);
     }
 }
