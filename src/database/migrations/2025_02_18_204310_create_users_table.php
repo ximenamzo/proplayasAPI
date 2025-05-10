@@ -25,6 +25,8 @@ return new class extends Migration
             $table->string('expertise_area')->nullable();
             $table->string('research_work')->nullable();
             $table->string('profile_picture')->nullable();
+            $table->string('country')->nullable();
+            $table->string('city')->nullable();
             $table->json('social_media')->nullable();
             $table->enum('status', ['activo', 'inactivo'])->default('activo');
             $table->rememberToken();

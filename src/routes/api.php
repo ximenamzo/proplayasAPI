@@ -15,7 +15,7 @@ use App\Http\Controllers\MemberController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\JWTMiddleware;
 use App\Http\Controllers\PublicationController;
-use App\Http\Controllers\WebinarController;
+use App\Http\Controllers\EventController;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -220,7 +220,7 @@ Route::prefix('collaborators')->group(function () {
 });
 
 /**
- * 🔹 CRUDs DE CONTENIDO (PUBLICACIONES, LIBROS, WEBSERIES, WEBINARS, NEWS)  
+ * 🔹 CRUDs DE CONTENIDO (PUBLICACIONES, LIBROS, WEBSERIES, eventS, NEWS)  
  * Aquí van las rutas para manejar contenido publicado en la plataforma.
  */
 
@@ -240,17 +240,17 @@ Route::prefix('publication')->group(function () {
 });
 
 
-/** CRUD: WEBINARS (eventos, charlas, sesiones) */
-Route::get('/webinars', [WebinarController::class, 'index']); // público y usuarios logueados
+/** CRUD: EVENTOS (webinars, charlas, sesiones) */
+Route::get('/events', [EventController::class, 'index']); // público y usuarios logueados
 
-Route::prefix('webinar')->group(function () {
+Route::prefix('event')->group(function () {
 
     Route::middleware('jwt.auth')->group(function () {
-        Route::post('/', [WebinarController::class, 'store']); // crear
-        Route::put('/{id}/toggle-status', [WebinarController::class, 'toggleStatus']); // alternar público/archivado
-        Route::put('/{id}', [WebinarController::class, 'update']); // editar
-        Route::delete('/{id}', [WebinarController::class, 'destroy']); // eliminación permanente
+        Route::post('/', [EventController::class, 'store']); // crear
+        Route::put('/{id}/toggle-status', [EventController::class, 'toggleStatus']); // alternar público/archivado
+        Route::put('/{id}', [EventController::class, 'update']); // editar
+        Route::delete('/{id}', [EventController::class, 'destroy']); // eliminación permanente
     });
     
-    Route::get('/{id}', [WebinarController::class, 'show']); // ver detalle
+    Route::get('/{id}', [EventController::class, 'show']); // ver detalle
 });

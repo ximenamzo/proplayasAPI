@@ -11,15 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('collaborative_projects', function (Blueprint $table) {
+        Schema::create('projects', function (Blueprint $table) {
             $table->id();
             $table->string('title');
             $table->text('description');
-            $table->string('image')->nullable();
-            $table->date('date');
+            $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
+            $table->dateTime('date');
             $table->string('location')->nullable();
             $table->string('link')->nullable();
-            $table->json('participants');
+            $table->string('cover_image')->nullable();
+            $table->string('file_path')->nullable();
+            $table->json('participants')->nullable(); // JSON
+            $table->enum('status', ['publico', 'archivado'])->default('publico');
             $table->timestamps();
         });
     }
@@ -29,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('collaborative_projects');
+        Schema::dropIfExists('projects');
     }
 };

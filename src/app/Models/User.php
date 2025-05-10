@@ -30,6 +30,8 @@ class User extends Authenticatable
         'expertise_area',
         'research_work',
         'profile_picture',
+        'country',
+        'city',
         'social_media',
         'status',
     ];
@@ -94,11 +96,19 @@ class User extends Authenticatable
     }
 
     /**
-     * Relación: Un usuario puede crear muchos webinars.
+     * Relación: Un usuario puede crear muchos events.
      */
-    public function webinars()
+    public function events()
     {
-        return $this->hasMany(Webinar::class, 'author_id');
+        return $this->hasMany(Event::class, 'author_id');
+    }
+
+    /**
+     * Relación: Un usuario puede crear muchos proyectos colaborativos de bajo costo.
+     */
+    public function projects()
+    {
+        return $this->hasMany(Project::class, 'author_id');
     }
 
     /**

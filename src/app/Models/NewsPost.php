@@ -16,7 +16,8 @@ class NewsPost extends Model
         'post_date',
         'category',
         'tags',
-        'image',
+        'file_path',
+        'cover_image',
         'link',
         'status',
     ];

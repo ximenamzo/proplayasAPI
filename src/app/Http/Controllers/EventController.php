@@ -3,19 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ApiResponse;
-use App\Models\Webinar;
+use App\Models\Event;
 use Illuminate\Http\Request;
 
-class WebinarController extends Controller
+class EventController extends Controller
 {
-    /** 🟢 Obtener todos los webinars (visibilidad filtrada) */
+    /** 🟢 Obtener todos los eventos (visibilidad filtrada) */
     public function index(Request $request)
     {
         $auth = $request->user();
         $authId = $auth->sub ?? $auth->id ?? null;
         $isAdmin = $auth?->role === 'admin';
 
-        $query = Webinar::with(['author:id,name,username,email,role,status'])
+        $query = Event::with(['author:id,name,username,email,role,status'])
                         ->orderBy('created_at', 'desc');
 
         if (!$auth) {
@@ -27,33 +27,33 @@ class WebinarController extends Controller
             });
         }
 
-        return ApiResponse::success('Lista de webinars obtenida', $query->get());
+        return ApiResponse::success('Lista de eventos obtenida', $query->get());
     }
 
-    /** 🔵 Ver un webinar por ID */
+    /** 🔵 Ver un event por ID */
     public function show($id, Request $request)
     {
         $auth = $request->user();
-        $webinar = Webinar::with(['author:id,name,username,email,role,status'])->find($id);
+        $event = Event::with(['author:id,name,username,email,role,status'])->find($id);
 
-        if (!$webinar) {
-            return ApiResponse::notFound('Webinar no encontrado');
+        if (!$event) {
+            return ApiResponse::notFound('Event no encontrado');
         }
 
-        if ($webinar->status === 'archivado' && (!$auth || ($auth->id !== $webinar->author_id && $auth->role !== 'admin'))) {
-            return ApiResponse::unauthorized('No autorizado para ver este webinar');
+        if ($event->status === 'archivado' && (!$auth || ($auth->id !== $event->author_id && $auth->role !== 'admin'))) {
+            return ApiResponse::unauthorized('No autorizado para ver este event');
         }
 
-        return ApiResponse::success('Webinar obtenido', $webinar);
+        return ApiResponse::success('Event obtenido', $event);
     }
 
-    /** 🟡 Crear nuevo webinar */
+    /** 🟡 Crear nuevo event */
     public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'date' => 'required|date_format:Y-m-d H:i:s',
+            'date' => 'required|date',
             'link' => 'nullable|url',
             'format' => 'required|in:presencial,online',
             'location' => 'nullable|string|max:255',
@@ -63,7 +63,7 @@ class WebinarController extends Controller
             return ApiResponse::error('La ubicación es obligatoria para eventos presenciales', 422);
         }
 
-        $webinar = Webinar::create([
+        $event = Event::create([
             'title' => $request->title,
             'description' => $request->description,
             'date' => $request->date,
@@ -74,20 +74,20 @@ class WebinarController extends Controller
             'author_id' => $request->user()->id
         ]);
 
-        return ApiResponse::created('Webinar creado correctamente', $webinar);
+        return ApiResponse::created('Event creado correctamente', $event);
     }
 
-    /** 🟠 Editar un webinar (solo el autor o admin) */
+    /** 🟠 Editar un event (solo el autor o admin) */
     public function update($id, Request $request)
     {
-        $webinar = Webinar::find($id);
+        $event = Event::find($id);
 
-        if (!$webinar) {
-            return ApiResponse::notFound('Webinar no encontrado');
+        if (!$event) {
+            return ApiResponse::notFound('Event no encontrado');
         }
 
         $auth = $request->user();
-        if ($auth->id !== $webinar->author_id && $auth->role !== 'admin') {
+        if ($auth->id !== $event->author_id && $auth->role !== 'admin') {
             return ApiResponse::unauthorized('No autorizado');
         }
 
@@ -101,51 +101,51 @@ class WebinarController extends Controller
             'status' => 'in:publico,archivado'
         ]);
 
-        $webinar->update($request->only([
+        $event->update($request->only([
             'title', 'description', 'date', 'link', 'format', 'location', 'status'
         ]));
 
-        return ApiResponse::success('Webinar actualizado correctamente', $webinar);
+        return ApiResponse::success('Event actualizado correctamente', $event);
     }
 
     /** 🟠 Alternar entre público y archivado */
     public function toggleStatus($id, Request $request)
     {
-        $webinar = Webinar::find($id);
+        $event = Event::find($id);
 
-        if (!$webinar) {
-            return ApiResponse::notFound('Webinar no encontrado');
+        if (!$event) {
+            return ApiResponse::notFound('Event no encontrado');
         }
 
         $auth = $request->user();
 
-        if ($auth->id !== $webinar->author_id && $auth->role !== 'admin') {
+        if ($auth->id !== $event->author_id && $auth->role !== 'admin') {
             return ApiResponse::unauthorized('No autorizado');
         }
 
-        $webinar->status = $webinar->status === 'publico' ? 'archivado' : 'publico';
-        $webinar->save();
+        $event->status = $event->status === 'publico' ? 'archivado' : 'publico';
+        $event->save();
 
-        return ApiResponse::success('Estado del webinar actualizado correctamente', $webinar);
+        return ApiResponse::success('Estado del event actualizado correctamente', $event);
     }
 
-    /** 🔴 Eliminar permanentemente un webinar */
+    /** 🔴 Eliminar permanentemente un event */
     public function destroy($id, Request $request)
     {
-        $webinar = Webinar::find($id);
+        $event = Event::find($id);
 
-        if (!$webinar) {
-            return ApiResponse::notFound('Webinar no encontrado');
+        if (!$event) {
+            return ApiResponse::notFound('Event no encontrado');
         }
 
         $auth = $request->user();
 
-        if ($auth->id !== $webinar->author_id && $auth->role !== 'admin') {
+        if ($auth->id !== $event->author_id && $auth->role !== 'admin') {
             return ApiResponse::unauthorized('No autorizado');
         }
 
-        $webinar->delete();
+        $event->delete();
 
-        return ApiResponse::success('Webinar eliminado permanentemente');
+        return ApiResponse::success('Event eliminado permanentemente');
     }
 }

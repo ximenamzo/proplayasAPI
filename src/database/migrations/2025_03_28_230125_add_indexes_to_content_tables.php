@@ -9,9 +9,10 @@ return new class extends Migration
     protected array $tables = [
         'publications',
         'books',
-        'webinars',
+        'events',
         'series',
-        'news_posts'
+        'news_posts',
+        'projects'
     ];
 
     protected array $columns = [
