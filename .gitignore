@@ -33,3 +33,4 @@ auth.json
 /public/storage/uploads
 
 notes.txt
+/migrations_backup

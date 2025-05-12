@@ -235,12 +235,14 @@ class InvitationController extends Controller
             'postgraduate' => 'string|nullable|max:255',
             'expertise_area' => 'string|nullable|max:255',
             'research_work' => 'string|nullable|max:255',
-            'profile_picture' => 'string|nullable|max:255',
+            'profile_picture_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'profile_picture' => 'nullable|url',
             'social_media' => 'array|nullable',
 
             // Nodo
             'node_name' => 'string|nullable|max:255',
-            'profile_picture_node' => 'string|nullable|max:255',
+            'profile_picture_node_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'profile_picture_node' => 'nullable|url',
             'about_node' => 'string|nullable',
             'country' => 'string|nullable|max:255',
             'city' => 'string|nullable|max:255',
