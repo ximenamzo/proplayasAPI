@@ -237,6 +237,8 @@ class InvitationController extends Controller
             'research_work' => 'string|nullable|max:255',
             'profile_picture_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'profile_picture' => 'nullable|url',
+            'country_user' => 'string|nullable|max:255',
+            'city_user' => 'string|nullable|max:255',
             'social_media' => 'array|nullable',
 
             // Nodo
@@ -244,8 +246,8 @@ class InvitationController extends Controller
             'profile_picture_node_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'profile_picture_node' => 'nullable|url',
             'about_node' => 'string|nullable',
-            'country' => 'string|nullable|max:255',
-            'city' => 'string|nullable|max:255',
+            'country_node' => 'string|nullable|max:255',
+            'city_node' => 'string|nullable|max:255',
             'ip_address' => 'string|nullable|max:255',
             'coordinates' => 'string|nullable|max:255',
             'alt_places' => 'string|nullable',
@@ -318,6 +320,8 @@ class InvitationController extends Controller
             'expertise_area' => $request->expertise_area ?? null,
             'research_work' => $request->research_work ?? null,
             'profile_picture' => $profilePicturePath ?? null,
+            'country' => $request->country_user ?? null,
+            'city' => $request->city_user ?? null,
             'social_media' => $request->social_media ? json_decode($request->social_media, true) : null,
             'status' => 'activo'
         ]);
@@ -348,8 +352,8 @@ class InvitationController extends Controller
                 'name' => $request->node_name,
                 'profile_picture' => $nodeProfilePicture ?? null,
                 'about' => $request->about_node,
-                'country' => $request->country,
-                'city' => $request->city,
+                'country' => $request->country_node,
+                'city' => $request->city_node,
                 'ip_address' => $request->ip_address ?? null,
                 'coordinates' => $request->coordinates ?? null,
                 'alt_places' => $request->alt_places ?? null,

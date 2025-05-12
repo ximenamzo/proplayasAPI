@@ -49,7 +49,7 @@ class UserController extends Controller
             $userModel->only([
                 'id', 'name', 'username', 'email', 'role', 'about',
                 'degree', 'postgraduate', 'expertise_area', 'research_work',
-                'profile_picture', 'social_media', 'status'
+                'profile_picture', 'country', 'city', 'social_media', 'status'
             ])
         );
     }
@@ -72,9 +72,9 @@ class UserController extends Controller
         }
 
         $user = $query->select(
-            'id', 'name', 'username', 'email', 'role', 'about', 
+            'id', 'name', 'username', 'email', 'role', 'about',
             'degree', 'postgraduate', 'expertise_area', 'research_work',
-            'profile_picture', 'social_media', 'status')
+            'profile_picture', 'country', 'city', 'social_media', 'status')
             ->first();
 
         if (!$user) {
@@ -235,6 +235,8 @@ class UserController extends Controller
             'expertise_area' => 'string|nullable|max:255',
             'research_work' => 'string|nullable|max:255',
             'profile_picture' => 'string|nullable|max:255',
+            'country' => 'string|nullable|max:255',
+            'city' => 'string|nullable|max:255',
             'social_media' => 'array|nullable'
         ]);
             
@@ -261,7 +263,7 @@ class UserController extends Controller
         return ApiResponse::success('Perfil actualizado correctamente', $authUser->only([
                 'id', 'name', 'username', 'email', 'role', 'about', 
                 'degree', 'postgraduate', 'expertise_area', 'research_work', 
-                'profile_picture', 'social_media', 'status'
+                'profile_picture', 'country', 'city', 'social_media', 'status'
             ])
         );
     }
@@ -310,7 +312,8 @@ class UserController extends Controller
             'name', 'about', 
             'degree', 'postgraduate',
             'expertise_area', 'research_work', 
-            'profile_picture', 'social_media'
+            'profile_picture', 'social_media',
+            'country', 'city'
         ];
 
         $request->validate([
@@ -321,6 +324,8 @@ class UserController extends Controller
             'expertise_area' => 'string|nullable|max:255',
             'research_work' => 'string|nullable|max:255',
             'profile_picture' => 'string|nullable|max:255',
+            'country' => 'string|nullable|max:255',
+            'city' => 'string|nullable|max:255',
             'social_media' => 'array|nullable'
         ]);
 
@@ -329,7 +334,7 @@ class UserController extends Controller
         return ApiResponse::success('Perfil actualizado correctamente', $user->only([
                 'id', 'name', 'username', 'email', 'role', 'about', 
                 'degree', 'postgraduate', 'expertise_area', 'research_work', 
-                'profile_picture', 'social_media', 'status'
+                'profile_picture', 'country', 'city', 'social_media', 'status'
             ])
         );
     }
