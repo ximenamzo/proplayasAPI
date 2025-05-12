@@ -139,7 +139,7 @@ class UserController extends Controller
                 'username' => $m->user->username,
                 'research_line' => $m->user->expertise_area,
                 'work_area' => $m->user->research_work,
-                'status' => $m->user->status,
+                'status' => $m->status,
             ];
         }
 
