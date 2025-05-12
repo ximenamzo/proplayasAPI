@@ -56,49 +56,61 @@ class PublicationController extends Controller
 
     /** 🟡 Crear publicación */
     public function store(Request $request)
-    {
-        $request->validate([
-            'type' => 'required|in:boletin,guia,articulo',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'link' => 'nullable|url',
-            'doi' => 'nullable|string',
-            'issn' => 'nullable|string',
-            'cover_image_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'cover_image_url' => 'nullable|url',
-            'file_file' => 'nullable|file|mimes:pdf,docx,xlsx|max:10240',
-            'file_url' => 'nullable|url'
-        ]);
-
-        $coverPath = null;
-        $filePath = null;
-
-        if ($request->hasFile('cover_image_file')) {
-            $coverPath = FileUploadService::uploadImage($request->file('cover_image_file'), 'covers');
-        } elseif ($request->filled('cover_image_url')) {
-            $coverPath = $request->input('cover_image_url');
-        }
+    {        
+        try {
+            $request->validate([
+                'type' => 'required|in:boletin,guia,articulo',
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'link' => 'nullable|url',
+                'doi' => 'nullable|string',
+                'issn' => 'nullable|string',
+                'cover_image_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+                'cover_image_url' => 'nullable|url',
+                'file_file' => 'nullable|file|mimes:pdf,docx,xlsx|max:20480',
+                'file_url' => 'nullable|url'
+            ]);
     
-        if ($request->hasFile('file_file')) {
-            $filePath = FileUploadService::uploadFile($request->file('file_file'), 'docs');
-        } elseif ($request->filled('file_url')) {
-            $filePath = $request->input('file_url');
+            $coverPath = null;
+            $filePath = null;
+    
+            if ($request->hasFile('cover_image_file')) {
+                $coverPath = FileUploadService::uploadImage($request->file('cover_image_file'), 'covers');
+            } elseif ($request->filled('cover_image_url')) {
+                $coverPath = $request->input('cover_image_url');
+            }
+        
+            if ($request->hasFile('file_file')) {
+                $filePath = FileUploadService::uploadFile($request->file('file_file'), 'docs');
+            } elseif ($request->filled('file_url')) {
+                $filePath = $request->input('file_url');
+            }
+    
+            $publication = Publication::create([
+                'type' => $request->type,
+                'title' => $request->title,
+                'description' => $request->description,
+                'link' => $request->link,
+                'doi' => $request->doi,
+                'issn' => $request->issn,
+                'file_path' => $filePath,
+                'cover_image' => $coverPath,
+                'author_id' => $request->user()->id,
+                'status' => 'publico'
+            ]); 
+    
+            return ApiResponse::created('Publicación creada correctamente', $publication);
+            
+        } catch (ValidationException $e) {
+            return ApiResponse::error('Error de validación', 422, [
+                'errors' => $e->errors()
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Error inesperado al crear publicación: ' . $e->getMessage());
+            return ApiResponse::error('Error inesperado al guardar publicación', 500, [
+                'debug' => $e->getMessage(),
+            ]);
         }
-
-        $publication = Publication::create([
-            'type' => $request->type,
-            'title' => $request->title,
-            'description' => $request->description,
-            'link' => $request->link,
-            'doi' => $request->doi,
-            'issn' => $request->issn,
-            'file_path' => $filePath,
-            'cover_image' => $coverPath,
-            'author_id' => $request->user()->id,
-            'status' => 'publico'
-        ]); 
-
-        return ApiResponse::created('Publicación creada correctamente', $publication);
     }
 
     /** 🟠 Editar publicación */

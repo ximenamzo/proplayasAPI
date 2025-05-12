@@ -284,8 +284,13 @@ class UserController extends Controller
         $user->profile_picture = $newPath;
         $user->save();
     
-        return response()->json([
+        /*return response()->json([
             'message' => 'Imagen de perfil actualizada correctamente.',
+            'url' => asset($newPath),
+            'user' => $user->only(['id', 'name', 'profile_picture'])
+        ], 200);*/
+
+        return ApiResponse::success('Imagen de perfil actualizada correctamente', [
             'url' => asset($newPath),
             'user' => $user->only(['id', 'name', 'profile_picture'])
         ], 200);

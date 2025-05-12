@@ -35,3 +35,8 @@ COPY ./docker/php/php.ini /usr/local/etc/php/conf.d/php.ini
 
 # Exponer el puerto 9000 para PHP-FPMEXPOSE 9000
 EXPOSE 9000
+
+RUN echo "upload_max_filesize=20M" >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size=25M" >> /usr/local/etc/php/conf.d/uploads.ini
+
+RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memory-limit.ini

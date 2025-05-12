@@ -112,7 +112,7 @@ class InvitationController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'role_type' => 'node_leader',
-            'node_type' => $request->node_type
+            'node_type' => $request->node_type //['sociedad_civil', 'empresarial', 'cientifico', 'funcion_publica', 'individual']
         ];
 
         // Generar token con los datos del usuario
@@ -235,7 +235,7 @@ class InvitationController extends Controller
             'postgraduate' => 'string|nullable|max:255',
             'expertise_area' => 'string|nullable|max:255',
             'research_work' => 'string|nullable|max:255',
-            'profile_picture_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'profile_picture_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'profile_picture' => 'nullable|url',
             'country_user' => 'string|nullable|max:255',
             'city_user' => 'string|nullable|max:255',
@@ -243,7 +243,7 @@ class InvitationController extends Controller
 
             // Nodo
             'node_name' => 'string|nullable|max:255',
-            'profile_picture_node_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'profile_picture_node_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'profile_picture_node' => 'nullable|url',
             'about_node' => 'string|nullable',
             'country_node' => 'string|nullable|max:255',
