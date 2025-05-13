@@ -151,65 +151,84 @@ class UserController extends Controller
     public function listAllMembers(Request $request)
     {
         $auth = $request->user();
-
+    
         if (!$auth || $auth->role !== 'admin') {
-            return ApiResponse::unauthorized('Unauthorized: Solo los administradores pueden acceder a esta lista', 403);
+            return ApiResponse::unauthorized('Solo los administradores pueden acceder a esta lista');
         }
-
+    
         $nodes = Node::with([
-            'leader' => function ($q) {
-                $q->select(
-                    'id', 'name', 'email', 'role', 'status'
-                );
-            },
-            'members.user' => function ($q) {
-                $q->select(
-                    'id', 'name', 'email', 'role', 'status'
-                );
-            }
-        ])
-        ->orderBy('id')
-        ->get();
-
-        $output = [];
-
+            'leader:id,name,email,role,status',
+            'members.user:id,name,email,role,status'
+        ])->orderBy('id')->get();
+    
+        $results = collect();
+    
         foreach ($nodes as $node) {
-            // Incluir al líder del nodo
+            $leaderId = $node->leader?->id;
+    
             if ($node->leader) {
-                $output[] = [
+                $results->push([
                     'name' => $node->leader->name,
                     'email' => $node->leader->email,
                     'role' => 'node_leader',
                     'node_id' => $node->id,
                     'node_code' => strtoupper($node->code),
                     'status' => $node->leader->status,
-                ];
+                ]);
             }
-
-            // Incluir a los miembros
+    
             foreach ($node->members as $member) {
-                if ($member->user) {
-                    $output[] = [
+                if ($member->user && $member->user->id !== $leaderId) {
+                    $results->push([
                         'name' => $member->user->name,
                         'email' => $member->user->email,
                         'role' => 'member',
                         'node_id' => $node->id,
                         'node_code' => strtoupper($node->code),
                         'status' => $member->user->status,
-                    ];
+                    ]);
                 }
             }
         }
-
-        // Ordenar: líderes primero, luego miembros; activos arriba, inactivos abajo
-        $output = collect($output)->sortBy([
+    
+        // Filtrar por búsqueda
+        if ($search = $request->input('search')) {
+            $results = $results->filter(fn($item) =>
+                str_contains(strtolower($item['name']), strtolower($search)) ||
+                str_contains(strtolower($item['email']), strtolower($search))
+            );
+        }
+    
+        // Filtrar por rol
+        if ($role = $request->input('role')) {
+            $results = $results->filter(fn($item) => $item['role'] === $role);
+        }
+    
+        // Ordenar: líder > miembro, activo > inactivo
+        $results = $results->sortBy([
             ['node_id', 'asc'],
-            ['role', 'desc'], // node_leader < member
-            ['status', 'asc'], // activo primero
+            ['role', 'desc'],   // node_leader antes que member
+            ['status', 'asc'],  // activo antes que inactivo
         ])->values();
-
-        return ApiResponse::success('Miembros de ProPlayas listados correctamente', $output);
+    
+        // Paginación
+        $perPage = 20;
+        $currentPage = (int) $request->input('page', 1);
+        $paged = $results->forPage($currentPage, $perPage)->values();
+    
+        return response()->json([
+            'status' => 200,
+            'message' => 'Lista de usuarios de ProPlayas obtenida correctamente',
+            'data' => $paged,
+            'meta' => [
+                'current_page' => $currentPage,
+                'per_page' => $perPage,
+                'total' => $results->count(),
+                'last_page' => ceil($results->count() / $perPage),
+            ]
+        ]);
     }
+      
 
     /** 🟠 Editar perfil propio usando solo el token */
     public function updateProfile(Request $request)

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Validator;
 
 class PublicationController extends Controller
 {
-    /** 🟢 Obtener publicaciones públicas o propias */
+    /** 🟢 Obtener publicaciones (públicas o todas si es admin) */
     public function index(Request $request)
     {
         $auth = $request->user();
@@ -22,17 +22,70 @@ class PublicationController extends Controller
         $query = Publication::with(['author:id,name,username,email,role,status'])
             ->orderBy('created_at', 'desc');
 
+        // Filtro por visibilidad
         if (!$auth) {
             $query->where('status', 'publico');
         } elseif (!$isAdmin) {
-            $query->where(fn($q) => 
-                $q->where('status', 'publico')
-                  ->orWhere('author_id', $authId
-                ));
+            $query->where(function ($q) use ($authId) {
+                $q->where('status', 'publico')->orWhere('author_id', $authId);
+            });
         }
 
-        return ApiResponse::success('Lista de publicaciones obtenida', $query->get());
+        // Filtro por búsqueda
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                ->orWhere('description', 'like', "%$search%")
+                ->orWhere('type', 'like', "%$search%");
+            });
+        }
+
+        // Paginación
+        $perPage = 20;
+        $publications = $query->paginate($perPage)->appends($request->query());
+
+        return ApiResponse::success('Lista de publicaciones obtenida', $publications->items(), [
+            'current_page' => $publications->currentPage(),
+            'per_page' => $publications->perPage(),
+            'total' => $publications->total(),
+            'last_page' => $publications->lastPage(),
+        ]);
     }
+
+    /** 🟢 Obtener publicaciones propias (públicas y privadas) */
+    public function ownPublications(Request $request)
+    {
+        $auth = $request->user();
+
+        if (!$auth) {
+            return ApiResponse::unauthenticated();
+        }
+
+        $query = Publication::with(['author:id,name,username,email,role,status'])
+            ->where('author_id', $auth->id)
+            ->orderBy('created_at', 'desc');
+
+        // Filtro por búsqueda
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                ->orWhere('description', 'like', "%$search%")
+                ->orWhere('type', 'like', "%$search%");
+            });
+        }
+
+        // Paginación
+        $perPage = 20;
+        $publications = $query->paginate($perPage)->appends($request->query());
+
+        return ApiResponse::success('Lista de publicaciones propias obtenida', $publications->items(), [
+            'current_page' => $publications->currentPage(),
+            'per_page' => $publications->perPage(),
+            'total' => $publications->total(),
+            'last_page' => $publications->lastPage(),
+        ]);
+    }
+
 
     /** 🔵 Ver una publicación */
     public function show($id, Request $request)

@@ -154,9 +154,10 @@ Route::prefix('node')->group(function () {
  */
 
 // Dev: listar todos los usuarios (solo local)
-Route::get('/users', [UserController::class, 'index']);
+Route::get('/local-users', [UserController::class, 'index']);
 // Listar filtrado por nodo (solo admin)
-Route::middleware('jwt.auth')->get('/usersByNode', [UserController::class, 'listAllMembers']);
+Route::middleware('jwt.auth')->get('/users', [UserController::class, 'listAllMembers']);
+// GET /api/usersByNode?page=2&search=xmanzo&role=member
 
 Route::prefix('user')->group(function () {
     // Requieren autenticación (JWT)
@@ -226,7 +227,12 @@ Route::prefix('collaborators')->group(function () {
  */
 
 /** CRUD: PUBLICACIONES (boletines, guías, artículos) */
-Route::get('/publications', [PublicationController::class, 'index']); // público y usuarios logueados
+//Route::get('/publications', [PublicationController::class, 'index']); // público y usuarios logueados
+Route::prefix('publications')->group(function () {
+    Route::get('/', [PublicationController::class, 'index']); // público o autenticado
+    Route::middleware('jwt.auth')->get('/own', [PublicationController::class, 'ownPublications']); // dashboard propio
+});
+
 
 Route::prefix('publication')->group(function () {
 

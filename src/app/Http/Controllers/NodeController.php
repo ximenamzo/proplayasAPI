@@ -14,15 +14,41 @@ use Exception;
 
 class NodeController extends Controller
 {
-    /** 🟢 Ver todos los nodos (público) */
-    public function index() {
-        $nodes = Node::where('status', 'activo')
-            ->select('id', 'code', 'type', 'name', 
-                    'city', 'country', 'members_count', 'joined_in')
-            ->get();
+    /** 🟢 Ver todos los nodos (público o autenticado) */
+    public function index(Request $request)
+    {
+        $auth = $request->user(); // null si no está autenticado
 
-        return ApiResponse::success('Lista de nodos obtenida', $nodes);
+        $query = Node::select('id', 'code', 'type', 'name', 'city', 'country', 'members_count', 'joined_in');
+
+        // Si no hay usuario autenticado, mostrar solo activos
+        if (!$auth) {
+            $query->where('status', 'activo');
+        }
+
+        // Filtro de búsqueda (por nombre, código o ciudad)
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                ->orWhere('code', 'like', '%' . $search . '%')
+                ->orWhere('country', 'like', '%' . $search . '%')
+                ->orWhere('city', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Paginación
+        $perPage = 20;
+        $nodes = $query->orderBy('name')->paginate($perPage)->appends($request->query());
+
+        // Estructura de respuesta con datos + meta paginación
+        return ApiResponse::success('Lista de nodos obtenida', $nodes->items(), [
+            'current_page' => $nodes->currentPage(),
+            'per_page' => $nodes->perPage(),
+            'total' => $nodes->total(),
+            'last_page' => $nodes->lastPage(),
+        ]);
     }
+
     
     /** 🔵 Ver perfil de un nodo por ID o código (público) */
     public function show($identifier)
@@ -92,7 +118,7 @@ class NodeController extends Controller
         return ApiResponse::success('Nodo actualizado correctamente', $node);
     }
 
-    /** 🟡 Subir imagen de perfil de un nodo */
+    /** 🟡 Editar imagen de perfil de un nodo */
     public function uploadProfilePicture(Request $request)
     {
         try {
