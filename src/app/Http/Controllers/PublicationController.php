@@ -75,13 +75,15 @@ class PublicationController extends Controller
             $filePath = null;
     
             if ($request->hasFile('cover_image_file')) {
-                $coverPath = FileUploadService::uploadImage($request->file('cover_image_file'), 'covers');
+                $fullPath = FileUploadService::uploadImage($request->file('cover_image_file'), 'covers');
+                $coverPath = basename($fullPath);
             } elseif ($request->filled('cover_image_url')) {
                 $coverPath = $request->input('cover_image_url');
             }
         
             if ($request->hasFile('file_file')) {
-                $filePath = FileUploadService::uploadFile($request->file('file_file'), 'docs');
+                $fullPath = FileUploadService::uploadFile($request->file('file_file'), 'docs');
+                $filePath = basename($fullPath);                
             } elseif ($request->filled('file_url')) {
                 $filePath = $request->input('file_url');
             }

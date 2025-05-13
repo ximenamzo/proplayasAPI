@@ -269,31 +269,41 @@ class UserController extends Controller
     }
 
 
-    /** 🟡 Subir imagen de perfil */
+    /** 🟡 Subir imagen de perfil de usuario */
     public function uploadProfilePicture(Request $request)
     {
-        $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,webp|max:2048'
-        ]);
+        try {
+            \Log::info('Intentando subir imagen de perfil del usuario.');
     
-        $user = $request->user();
+            $request->validate([
+                'image' => 'required|image|mimes:jpeg,png,webp|max:5120'
+            ]);
     
-        $oldPath = $user->profile_picture;
-        $newPath = FileUploadService::uploadImage($request->file('image'), 'profiles', $oldPath);
+            $user = $request->user();
+            \Log::info('Usuario autenticado:', ['id' => $user->id]);
     
-        $user->profile_picture = $newPath;
-        $user->save();
+            $oldFilename = $user->profile_picture; // ahora es solo el nombre del archivo
+            $newFilename = FileUploadService::uploadImage($request->file('image'), 'profiles', $oldFilename);
     
-        /*return response()->json([
-            'message' => 'Imagen de perfil actualizada correctamente.',
-            'url' => asset($newPath),
-            'user' => $user->only(['id', 'name', 'profile_picture'])
-        ], 200);*/
-
-        return ApiResponse::success('Imagen de perfil actualizada correctamente', [
-            'url' => asset($newPath),
-            'user' => $user->only(['id', 'name', 'profile_picture'])
-        ], 200);
+            $user->profile_picture = $newFilename; // solo guardamos el nombre
+            $user->save();
+    
+            \Log::info('Imagen de perfil actualizada correctamente.', ['filename' => $newFilename]);
+    
+            return ApiResponse::success('Imagen de perfil actualizada correctamente', [
+                // Construimos la URL como lo hará el frontend
+                'url' => asset("storage/uploads/profiles/{$newFilename}"),
+                'user' => $user->only(['id', 'name', 'profile_picture'])
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::warning('Validación fallida al subir imagen de perfil.', ['errors' => $e->errors()]);
+            return ApiResponse::error('Error de validación', 422, ['errors' => $e->errors()]);
+        } catch (\Throwable $e) {
+            \Log::error('Error inesperado al subir imagen de perfil:', ['exception' => $e]);
+            return ApiResponse::error('Error inesperado al subir imagen de perfil', 500, [
+                'debug' => $e->getMessage()
+            ]);
+        }
     }
 
 

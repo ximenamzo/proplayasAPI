@@ -137,6 +137,7 @@ Route::prefix('node')->group(function () {
     Route::get('/members/{identifier}', [UserController::class, 'listByNode']);// Listar miembros por ID o código de nodo
 
     Route::middleware(['jwt.auth'])->group(function () {
+        Route::post('/upload-profile-picture', [NodeController::class, 'uploadProfilePicture']);
         Route::put('/{id}', [NodeController::class, 'update']); // Node leader edita su nodo
         Route::delete('/{id}', [NodeController::class, 'destroy']); // Admin elimina nodo (soft delete)
         Route::put('/{id}/reassign-leader', [NodeController::class, 'reassignLeader']); // Admin reasigna líder

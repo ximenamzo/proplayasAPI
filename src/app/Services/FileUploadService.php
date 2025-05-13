@@ -15,38 +15,37 @@ class FileUploadService
     {
         $filename = Str::uuid() . '.webp';
         $path = "uploads/{$folder}/{$filename}";
-
-        // Nueva forma con Intervention v3
+    
         $manager = new ImageManager(new Driver());
         $webp = $manager->read($image->getPathname())->toWebp(85);
-
+    
         Storage::disk('public')->put($path, $webp);
-
+    
         if ($oldPath) {
-            static::delete($oldPath);
+            static::delete("uploads/{$folder}/" . basename($oldPath));
         }
-
-        return "storage/{$path}";
+    
+        return $filename;
     }
 
     public static function uploadFile(UploadedFile $file, string $folder, ?string $oldPath = null): string
     {
         $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
         $path = "uploads/{$folder}/{$filename}";
-
+    
         Storage::disk('public')->putFileAs("uploads/{$folder}", $file, $filename);
-
+    
         if ($oldPath) {
-            static::delete($oldPath);
+            static::delete("uploads/{$folder}/" . basename($oldPath));
         }
-
-        return "storage/{$path}";
+    
+        return $filename;
     }
 
-    public static function delete(?string $url): void
+    public static function delete(?string $filename, string $folder = ''): void
     {
-        if (!$url) return;
-        $relativePath = str_replace('storage/', '', $url);
-        Storage::disk('public')->delete($relativePath);
-    }
+        if (!$filename || !$folder) return;
+        $path = "uploads/{$folder}/{$filename}";
+        Storage::disk('public')->delete($path);
+    }    
 }

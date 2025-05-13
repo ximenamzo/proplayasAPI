@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Node;
 use App\Models\Member;
 use App\Helpers\ApiResponse;
+use App\Services\FileUploadService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Exception;
@@ -89,7 +90,50 @@ class NodeController extends Controller
         Log::info("Nodo actualizado correctamente", ['node_id' => $node->id]);
 
         return ApiResponse::success('Nodo actualizado correctamente', $node);
-    }    
+    }
+
+    /** 🟡 Subir imagen de perfil de un nodo */
+    public function uploadProfilePicture(Request $request)
+    {
+        try {
+            \Log::info('Intentando subir imagen de perfil del nodo.');
+
+            $request->validate([
+                'image' => 'required|image|mimes:jpeg,png,webp|max:5120',
+            ]);
+
+            $user = $request->user();
+            $node = $user->node; // Asumimos que existe esta relación
+
+            if (!$node) {
+                \Log::warning('El usuario no tiene nodo asignado.');
+                return ApiResponse::error('Este usuario no está asignado a ningún nodo', 404);
+            }
+
+            $oldFilename = $node->profile_picture; // solo el nombre del archivo
+            $newFilename = FileUploadService::uploadImage($request->file('image'), 'profiles', $oldFilename);
+
+            $node->profile_picture = $newFilename;
+            $node->save();
+
+            \Log::info('Imagen del nodo actualizada correctamente.', ['filename' => $newFilename]);
+
+            return ApiResponse::success('Imagen del nodo actualizada correctamente', [
+                // Construimos la URL como lo hará el frontend
+                'url' => asset("storage/uploads/profiles/{$newFilename}"),
+                'node' => $node->only(['id', 'name', 'profile_picture'])
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::warning('Validación fallida al subir imagen de nodo.', ['errors' => $e->errors()]);
+            return ApiResponse::error('Error de validación', 422, ['errors' => $e->errors()]);
+        } catch (\Throwable $e) {
+            \Log::error('Error inesperado al subir imagen del nodo:', ['exception' => $e]);
+            return ApiResponse::error('Error inesperado al subir imagen del nodo', 500, [
+                'debug' => $e->getMessage()
+            ]);
+        }
+    }
+
     
      /** 🔴 Admin elimina nodo (soft delete) */
      public function destroy(Request $request, $id)
