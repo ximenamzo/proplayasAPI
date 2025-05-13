@@ -300,10 +300,9 @@ class InvitationController extends Controller
         }
 
         // Manejar imagen de perfil si se envía como archivo o como url
-        $profilePicturePath = null;
+        $profilePicturePath = null; // por defecto no se carga ninguna imagen
         if ($request->hasFile('profile_picture_file')) {
-            $fullPath = FileUploadService::uploadImage($request->file('profile_picture_file'), 'profiles');
-            $profilePicturePath = basename($fullPath);
+            $profilePicturePath = FileUploadService::uploadImage($request->file('profile_picture_file'), 'profiles');
         } elseif ($request->filled('profile_picture')) {
             $profilePicturePath = $request->profile_picture;
         }
@@ -340,8 +339,7 @@ class InvitationController extends Controller
 
             $nodeProfilePicture = null;
             if ($request->hasFile('profile_picture_node_file')) {
-                $fullPath = FileUploadService::uploadImage($request->file('profile_picture_node_file'), 'profiles');
-                $nodeProfilePicture = basename($fullPath);
+                $nodeProfilePicture = FileUploadService::uploadImage($request->file('profile_picture_node_file'), 'profiles');
             } elseif ($request->filled('profile_picture_node')) {
                 $nodeProfilePicture = $request->profile_picture_node;
             }

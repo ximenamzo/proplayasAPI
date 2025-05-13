@@ -128,15 +128,13 @@ class PublicationController extends Controller
             $filePath = null;
     
             if ($request->hasFile('cover_image_file')) {
-                $fullPath = FileUploadService::uploadImage($request->file('cover_image_file'), 'covers');
-                $coverPath = basename($fullPath);
+                $coverPath = FileUploadService::uploadImage($request->file('cover_image_file'), 'covers');
             } elseif ($request->filled('cover_image_url')) {
                 $coverPath = $request->input('cover_image_url');
             }
         
             if ($request->hasFile('file_file')) {
-                $fullPath = FileUploadService::uploadFile($request->file('file_file'), 'docs');
-                $filePath = basename($fullPath);                
+                $filePath = FileUploadService::uploadFile($request->file('file_file'), 'docs');
             } elseif ($request->filled('file_url')) {
                 $filePath = $request->input('file_url');
             }
@@ -187,19 +185,92 @@ class PublicationController extends Controller
             'description' => 'string|nullable',
             'link' => 'nullable|url',
             'doi' => 'nullable|string',
-            'issn' => 'nullable|string',
-            'file_path' => 'nullable|string',
-            'cover_image' => 'nullable|string',
-            'status' => 'in:publico,archivado'
+            'issn' => 'nullable|string'
         ]);
 
-        $pub->update($request->only([
-            'title', 'description', 'link', 'doi', 'issn', 
-            'file_path', 'cover_image', 'status'
-        ]));
+        $pub->update($request->only(['title', 'description', 'link', 'doi', 'issn']));
 
         return ApiResponse::success('Publicación actualizada correctamente', $pub);
     }
+
+    /** 🟡 Subir imagen de portada de una publicación */
+    public function uploadCoverImage($id, Request $request)
+    {
+        try {
+            $request->validate([
+                'image' => 'required|image|mimes:jpeg,png,webp|max:5120'
+            ]);
+
+            $authUser = $request->user();
+            $pub = Publication::find($id);
+            
+            if (!$pub) return ApiResponse::notFound('Publicación no encontrada', 404);
+
+            $isOwner = $authUser->id === $pub->author_id;
+            $isAdmin = $authUser->role === 'admin';
+
+            if (!$isOwner && !$isAdmin) {
+                return ApiResponse::unauthorized('No autorizado para editar esta publicación', 403);
+            }
+
+            $oldFilename = $pub->cover_image; // solo el nombre del archivo
+            $filename = FileUploadService::uploadImage($request->file('image'), 'covers', $oldFilename);
+
+            $pub->cover_image = $filename;
+            $pub->save();
+
+            return ApiResponse::success('Imagen de portada subida correctamente', $pub->only([
+                'id', 'author_id', 'title', 'description', 'cover_image', 'file_path'
+            ]));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return ApiResponse::error('Error de validación', 422, ['errors' => $e->errors()]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al subir imagen de portada:', ['exception' => $e]);
+            return ApiResponse::error('Error inesperado al subir imagen', 500, [
+                'debug' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /** 🟡 Subir archivo de una publicación */
+    public function uploadFile($id, Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => 'required|file|mimes:pdf,docx,xlsx|max:20480'
+            ]);
+
+            $authUser = $request->user();
+            $pub = Publication::find($id);
+
+            if (!$pub) return ApiResponse::notFound('Publicación no encontrada', 404);
+
+            $isOwner = $authUser->id === $pub->author_id;
+            $isAdmin = $authUser->role === 'admin';
+
+            if (!$isOwner && !$isAdmin) {
+                return ApiResponse::unauthorized('No autorizado para editar esta publicación', 403);
+            }
+
+            $oldFilename = $pub->file_path; // solo el nombre del archivo
+            $filename = FileUploadService::uploadFile($request->file('file'), 'docs', $oldFilename);
+
+            $pub->file_path = $filename;
+            $pub->save();
+
+            return ApiResponse::success('Archivo subido correctamente', $pub->only([
+                'id', 'author_id', 'title', 'description', 'cover_image', 'file_path'
+            ]));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return ApiResponse::error('Error de validación', 422, ['errors' => $e->errors()]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al subir archivo adjunto:', ['exception' => $e]);
+            return ApiResponse::error('Error inesperado al subir archivo', 500, [
+                'debug' => $e->getMessage()
+            ]);
+        }
+    }
+
 
     /** 🟠 Alternar visibilidad */
     public function toggleStatus($id, Request $request)

@@ -99,7 +99,7 @@ class NodeController extends Controller
         $request->validate([
             'name' => 'string|max:255',
             'about' => 'string|nullable',
-            'profile_picture' => 'string|nullable',
+            //'profile_picture' => 'string|nullable',
             'social_media' => 'array|nullable',
             'coordinates' => 'string|nullable',
             'alt_places' => 'string|nullable',
@@ -109,7 +109,8 @@ class NodeController extends Controller
         Log::info("Validación de datos completada. Datos recibidos:", $request->all());
 
         $node->update($request->only([
-            'name', 'about', 'profile_picture', 'social_media',
+            'name', 'about', 'social_media',
+            //'profile_picture',
             'coordinates', 'alt_places', 'ip_address', 'memorandum'
         ]));
 
@@ -144,11 +145,9 @@ class NodeController extends Controller
 
             \Log::info('Imagen del nodo actualizada correctamente.', ['filename' => $newFilename]);
 
-            return ApiResponse::success('Imagen del nodo actualizada correctamente', [
-                // Construimos la URL como lo hará el frontend
-                'url' => asset("storage/uploads/profiles/{$newFilename}"),
-                'node' => $node->only(['id', 'name', 'profile_picture'])
-            ]);
+            return ApiResponse::success('Imagen del nodo actualizada correctamente', $node->only([
+                'id', 'name', 'leader_id', 'profile_picture'
+            ]));
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::warning('Validación fallida al subir imagen de nodo.', ['errors' => $e->errors()]);
             return ApiResponse::error('Error de validación', 422, ['errors' => $e->errors()]);

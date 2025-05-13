@@ -242,8 +242,8 @@ class UserController extends Controller
         $fields = [
             'name', 'about', 
             'degree', 'postgraduate',
-            'expertise_area', 'research_work', 
-            'profile_picture', 'social_media'
+            'expertise_area', 'research_work', 'social_media'
+            //, 'profile_picture'
         ];
 
         $request->validate([
@@ -253,7 +253,7 @@ class UserController extends Controller
             'postgraduate' => 'string|nullable|max:255',
             'expertise_area' => 'string|nullable|max:255',
             'research_work' => 'string|nullable|max:255',
-            'profile_picture' => 'string|nullable|max:255',
+            //'profile_picture' => 'string|nullable|max:255',
             'country' => 'string|nullable|max:255',
             'city' => 'string|nullable|max:255',
             'social_media' => 'array|nullable'
@@ -309,11 +309,9 @@ class UserController extends Controller
     
             \Log::info('Imagen de perfil actualizada correctamente.', ['filename' => $newFilename]);
     
-            return ApiResponse::success('Imagen de perfil actualizada correctamente', [
-                // Construimos la URL como lo hará el frontend
-                'url' => asset("storage/uploads/profiles/{$newFilename}"),
-                'user' => $user->only(['id', 'name', 'profile_picture'])
-            ]);
+            return ApiResponse::success('Imagen de perfil actualizada correctamente', $user->only([
+                'id', 'name', 'username', 'email', 'role', 'profile_picture'
+            ]));
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::warning('Validación fallida al subir imagen de perfil.', ['errors' => $e->errors()]);
             return ApiResponse::error('Error de validación', 422, ['errors' => $e->errors()]);

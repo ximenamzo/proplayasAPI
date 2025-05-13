@@ -237,6 +237,9 @@ Route::prefix('publications')->group(function () {
 Route::prefix('publication')->group(function () {
 
     Route::middleware('jwt.auth')->group(function () {
+        Route::post('/{id}/upload-cover-image', [PublicationController::class, 'uploadCoverImage']); // subir imagen de portada
+        Route::post('/{id}/upload-file', [PublicationController::class, 'uploadFile']); // subir archivo adjunto
+
         Route::post('/', [PublicationController::class, 'store']); // crear
         Route::put('/{id}/toggle-status', [PublicationController::class, 'toggleStatus']); // alternar público/archivado
         Route::put('/{id}', [PublicationController::class, 'update']); // editar
