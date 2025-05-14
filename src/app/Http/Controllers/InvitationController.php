@@ -254,7 +254,7 @@ class InvitationController extends Controller
             'joined_in' => 'nullable|integer|min:2000|max:' . now()->year,
             'id' => 'string|nullable|max:255',
             'social_media_node' => 'array|nullable',
-            'memorandum' => 'string|nullable|max:255',
+            'memorandum' => 'nullable|file|mimes:pdf,docx|max:10240',
         ]);
 
         // Decodificar el token
@@ -343,6 +343,11 @@ class InvitationController extends Controller
             } elseif ($request->filled('profile_picture_node')) {
                 $nodeProfilePicture = $request->profile_picture_node;
             }
+
+            $nodeMemorandum = null;
+            if ($request->hasFile('memorandum')) {
+                $nodeMemorandum = FileUploadService::uploadFile($request->file('memorandum'), 'docs');
+            }
             
             // Crear el Nodo
             $node = Node::create([
@@ -361,7 +366,7 @@ class InvitationController extends Controller
                 'members_count' => 1, // El líder es el primer miembro
                 'id' => $request->id ?? null,
                 'social_media' => $request->social_media_node ? json_decode(json_encode($request->social_media_node), true) : null,
-                'memorandum' => $request->memorandum ?? null,
+                'memorandum' => $request->$nodeMemorandum ?? null,
                 'status' => 'activo'
             ]);
     

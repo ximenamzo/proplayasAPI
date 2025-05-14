@@ -31,7 +31,6 @@ class ProjectController extends BaseContentController
                 'cover_image_url' => 'nullable|url',
                 'participants' => 'nullable|json',
                 'participants.*' => 'string|max:255'
-
             ]);
 
             $coverPath = null;

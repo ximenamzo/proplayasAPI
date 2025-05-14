@@ -110,6 +110,11 @@ class UserController extends Controller
             return ApiResponse::notFound('Nodo no encontrado', 404);
         }
 
+        // Si el nodo está inactivo y el usuario NO es admin ni líder, mostrar mensaje personalizado
+        if ($node->status !== 'activo' && !in_array($authUser?->role, ['admin', 'node_leader'])) {
+            return ApiResponse::unauthorized('Este nodo está desactivado temporalmente o fue eliminado permanentemente.', 403);
+        }
+
         // Filtro según permisos
         $onlyActive = !in_array($authUser?->role, ['admin', 'node_leader']);
 

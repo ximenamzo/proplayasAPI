@@ -143,6 +143,7 @@ Route::prefix('node')->group(function () {
 
     Route::middleware(['jwt.auth'])->group(function () {
         Route::post('/upload-profile-picture', [NodeController::class, 'uploadProfilePicture']);
+        Route::post('/upload-memorandum', [NodeController::class, 'uploadMemorandum']);
         Route::put('/{id}', [NodeController::class, 'update']); // Node leader edita su nodo
         Route::delete('/{id}', [NodeController::class, 'destroy']); // Admin elimina nodo (soft delete)
         Route::put('/{id}/reassign-leader', [NodeController::class, 'reassignLeader']); // Admin reasigna líder
@@ -230,28 +231,6 @@ Route::prefix('collaborators')->group(function () {
  * 🔹 CRUDs DE CONTENIDO (PUBLICACIONES, LIBROS, WEBSERIES, EVENTS, NEWS, PROJECTS)
  * Aquí van las rutas para manejar contenido publicado en la plataforma.
  */
-
-/** CRUD: PUBLICACIONES (boletines, guías, artículos) */
-//Route::get('/publications', [PublicationController::class, 'index']); // público y usuarios logueados
-// Route::prefix('publications')->group(function () {
-//     Route::get('/', [PublicationController::class, 'index']); // público o autenticado
-//     Route::middleware('jwt.auth')->get('/own', [PublicationController::class, 'ownPublications']); // dashboard propio
-// });
-
-// Route::prefix('publication')->group(function () {
-//     Route::middleware('jwt.auth')->group(function () {
-//         Route::post('/{id}/upload-cover-image', [PublicationController::class, 'uploadCoverImage']); // subir imagen de portada
-//         Route::post('/{id}/upload-file', [PublicationController::class, 'uploadFile']); // subir archivo adjunto
-
-//         Route::post('/', [PublicationController::class, 'store']); // crear
-//         Route::put('/{id}/toggle-status', [PublicationController::class, 'toggleStatus']); // alternar público/archivado
-//         Route::put('/{id}', [PublicationController::class, 'update']); // editar
-//         Route::delete('/{id}', [PublicationController::class, 'destroy']); // eliminación permanente
-//     });
-
-//     Route::get('/{id}', [PublicationController::class, 'show']); // ver detalle
-// });
-
 
 function contentRoutes(string $prefix, string $controller)
 {

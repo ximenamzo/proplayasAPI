@@ -44,6 +44,7 @@ class NewsController extends BaseContentController
                 'category' => $request->category,
                 'tags' => $request->tags,
                 'cover_image' => $coverPath,
+                'link' => $request->link,
                 'author_id' => $request->user()->id,
                 'status' => 'publico'
             ]);
@@ -74,7 +75,8 @@ class NewsController extends BaseContentController
             'content' => 'nullable|string',
             'category' => 'nullable|string|max:255',
             'tags' => 'nullable|array',
-            'tags.*' => 'string|max:100'
+            'tags.*' => 'string|max:100',
+            'link' => 'nullable|url'
         ]);
 
         $newsPost->update($request->only([

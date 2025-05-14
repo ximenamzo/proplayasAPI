@@ -99,19 +99,20 @@ class NodeController extends Controller
         $request->validate([
             'name' => 'string|max:255',
             'about' => 'string|nullable',
-            //'profile_picture' => 'string|nullable',
-            'social_media' => 'array|nullable',
+            'country' => 'string|nullable|max:255',
+            'city' => 'string|nullable|max:255',
+            'ip_address' => 'string|nullable',
             'coordinates' => 'string|nullable',
             'alt_places' => 'string|nullable',
-            'ip_address' => 'string|nullable',
-            'memorandum' => 'string|nullable',
+            'joined_in' => 'nullable|integer|min:2000|max:' . now()->year,
+            'social_media' => 'array|nullable',
         ]);
         Log::info("Validación de datos completada. Datos recibidos:", $request->all());
 
         $node->update($request->only([
-            'name', 'about', 'social_media',
-            //'profile_picture',
-            'coordinates', 'alt_places', 'ip_address', 'memorandum'
+            'name', 'about', 'country', 'city', 
+            'ip_address', 'coordinates', 'alt_places', 
+            'joined_in', 'social_media'
         ]));
 
         Log::info("Nodo actualizado correctamente", ['node_id' => $node->id]);
@@ -134,7 +135,7 @@ class NodeController extends Controller
 
             if (!$node) {
                 \Log::warning('El usuario no tiene nodo asignado.');
-                return ApiResponse::error('Este usuario no está asignado a ningún nodo', 404);
+                return ApiResponse::notFound('Este usuario no está asignado a ningún nodo', 404);
             }
 
             $oldFilename = $node->profile_picture; // solo el nombre del archivo
@@ -154,6 +155,47 @@ class NodeController extends Controller
         } catch (\Throwable $e) {
             \Log::error('Error inesperado al subir imagen del nodo:', ['exception' => $e]);
             return ApiResponse::error('Error inesperado al subir imagen del nodo', 500, [
+                'debug' => $e->getMessage()
+            ]);
+        }
+    }
+
+
+    /** 🟡 Editar memorandum de nodo */
+    public function uploadMemorandum(Request $request)
+    {
+        try {
+            \Log::info('Intentando subir memorandum del nodo.');
+
+            $request->validate([
+                'file' => 'required|file|mimes:pdf,docx|max:10240'
+            ]);
+
+            $user = $request->user();
+            $node = $user->node; // Asumimos que existe esta relación
+
+            if (!$node) {
+                \Log::warning('El usuario no tiene nodo asignado.');
+                return ApiResponse::notFound('Este usuario no está asignado a ningún nodo', 404);
+            }
+
+            $oldFilename = $node->memorandum; // solo el nombre del archivo
+            $newFilename = FileUploadService::uploadFile($request->file('file'), 'docs', $oldFilename);
+
+            $node->memorandum = $newFilename;
+            $node->save();
+
+            \Log::info('Imagen del nodo actualizada correctamente.', ['filename' => $newFilename]);
+
+            return ApiResponse::success('Memorandum del nodo actualizada correctamente', $node->only([
+                'id', 'name', 'leader_id', 'code', 'memorandum'
+            ]));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::warning('Validación fallida al subir memorandum del nodo.', ['errors' => $e->errors()]);
+            return ApiResponse::error('Error de validación', 422, ['errors' => $e->errors()]);
+        } catch (\Throwable $e) {
+            \Log::error('Error inesperado al subir memorandum del nodo:', ['exception' => $e]);
+            return ApiResponse::error('Error inesperado al subir memorandum del nodo', 500, [
                 'debug' => $e->getMessage()
             ]);
         }
