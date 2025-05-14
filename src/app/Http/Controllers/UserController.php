@@ -217,7 +217,7 @@ class UserController extends Controller
         ])->values();
     
         // Paginación
-        $perPage = 20;
+        $perPage = 200;
         $currentPage = (int) $request->input('page', 1);
         $paged = $results->forPage($currentPage, $perPage)->values();
     

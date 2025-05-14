@@ -37,7 +37,7 @@ class NodeController extends Controller
         }
 
         // Paginación
-        $perPage = 20;
+        $perPage = 200;
         $nodes = $query->orderBy('id')->paginate($perPage)->appends($request->query());
 
         // Estructura de respuesta con datos + meta paginación
