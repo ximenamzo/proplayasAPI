@@ -4,148 +4,104 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ApiResponse;
 use App\Models\Event;
+use App\Services\FileUploadService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
-class EventController extends Controller
+class EventController extends BaseContentController
 {
-    /** 🟢 Obtener todos los eventos (visibilidad filtrada) */
-    public function index(Request $request)
-    {
-        $auth = $request->user();
-        $authId = $auth->sub ?? $auth->id ?? null;
-        $isAdmin = $auth?->role === 'admin';
+    protected string $modelClass = Event::class;
+    protected array $searchableFields = ['title', 'description', 'location', 'type', 'format'];
+    protected string $type = 'evento';
 
-        $query = Event::with(['author:id,name,username,email,role,status'])
-                        ->orderBy('created_at', 'desc');
-
-        if (!$auth) {
-            $query->where('status', 'publico');
-        } elseif (!$isAdmin) {
-            $query->where(function ($q) use ($authId) {
-                $q->where('status', 'publico')
-                  ->orWhere('author_id', $authId);
-            });
-        }
-
-        return ApiResponse::success('Lista de eventos obtenida', $query->get());
-    }
-
-    /** 🔵 Ver un event por ID */
-    public function show($id, Request $request)
-    {
-        $auth = $request->user();
-        $event = Event::with(['author:id,name,username,email,role,status'])->find($id);
-
-        if (!$event) {
-            return ApiResponse::notFound('Event no encontrado');
-        }
-
-        if ($event->status === 'archivado' && (!$auth || ($auth->id !== $event->author_id && $auth->role !== 'admin'))) {
-            return ApiResponse::unauthorized('No autorizado para ver este event');
-        }
-
-        return ApiResponse::success('Event obtenido', $event);
-    }
-
-    /** 🟡 Crear nuevo event */
+    
+    /** 🟡 Crear evento */
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'date' => 'required|date',
-            'link' => 'nullable|url',
-            'format' => 'required|in:presencial,online',
-            'location' => 'nullable|string|max:255',
-        ]);
+        try {
+            $request->validate([
+                'title' => 'required|string|max:255',
+                'type' => 'required|in:event,taller,clase,curso,seminario,foro,conferencia,congreso',
+                'description' => 'required|string',
+                'date' => 'required|date',
+                'link' => 'required|url',
+                'format' => 'required|in:presencial,online',
+                'location' => 'nullable|string|max:255',
+                'participants' => 'nullable|json',
+                'participants.*' => 'string|max:255',
+                'cover_image_file' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+                'cover_image_url' => 'nullable|url',
+                'file_file' => 'nullable|file|mimes:pdf,docx,xlsx|max:20480',
+                'file_url' => 'nullable|url'
+            ]);
 
-        if ($request->format === 'presencial' && !$request->location) {
-            return ApiResponse::error('La ubicación es obligatoria para eventos presenciales', 422);
+            $coverPath = null;
+            $filePath = null;
+
+            if ($request->hasFile('cover_image_file')) {
+                $coverPath = FileUploadService::uploadImage($request->file('cover_image_file'), 'covers');
+            } elseif ($request->filled('cover_image_url')) {
+                $coverPath = $request->input('cover_image_url');
+            }
+
+            if ($request->hasFile('file_file')) {
+                $filePath = FileUploadService::uploadFile($request->file('file_file'), 'docs');
+            } elseif ($request->filled('file_url')) {
+                $filePath = $request->input('file_url');
+            }
+
+            $event = Event::create([
+                'title' => $request->title,
+                'type' => $request->type,
+                'description' => $request->description,
+                'date' => $request->date,
+                'link' => $request->link,
+                'format' => $request->format,
+                'location' => $request->location,
+                'participants' => $request->participants,
+                'cover_image' => $coverPath,
+                'file_path' => $filePath,
+                'author_id' => $request->user()->id,
+                'status' => 'publico'
+            ]);
+
+            return ApiResponse::created('Evento creado correctamente', $event);
+
+        } catch (ValidationException $e) {
+            return ApiResponse::error('Error de validación', 422, ['errors' => $e->errors()]);
+        } catch (\Throwable $e) {
+            \Log::error('Error al crear evento:', ['exception' => $e]);
+            return ApiResponse::error('Error inesperado al guardar evento', 500, ['debug' => $e->getMessage()]);
         }
-
-        $event = Event::create([
-            'title' => $request->title,
-            'description' => $request->description,
-            'date' => $request->date,
-            'link' => $request->link,
-            'format' => $request->format,
-            'location' => $request->location,
-            'status' => 'publico',
-            'author_id' => $request->user()->id
-        ]);
-
-        return ApiResponse::created('Event creado correctamente', $event);
     }
 
-    /** 🟠 Editar un event (solo el autor o admin) */
+    /** 🟠 Actualizar evento */
     public function update($id, Request $request)
     {
         $event = Event::find($id);
-
-        if (!$event) {
-            return ApiResponse::notFound('Event no encontrado');
-        }
+        if (!$event) return ApiResponse::notFound('Evento no encontrado');
 
         $auth = $request->user();
-        if ($auth->id !== $event->author_id && $auth->role !== 'admin') {
+        if ($event->author_id !== $auth->id && $auth->role !== 'admin') {
             return ApiResponse::unauthorized('No autorizado');
         }
 
         $request->validate([
-            'title' => 'string|max:255|nullable',
-            'description' => 'string|nullable',
-            'date' => 'date|nullable',
+            'title' => 'nullable|string|max:255',
+            'type' => 'nullable|in:event,taller,clase,curso,seminario,foro,conferencia,congreso',
+            'description' => 'nullable|string',
+            'date' => 'nullable|date',
             'link' => 'nullable|url',
             'format' => 'nullable|in:presencial,online',
             'location' => 'nullable|string|max:255',
-            'status' => 'in:publico,archivado'
+            'participants' => 'nullable|json',
+            'participants.*' => 'string|max:255'
         ]);
 
         $event->update($request->only([
-            'title', 'description', 'date', 'link', 'format', 'location', 'status'
+            'title', 'type', 'description', 'date', 'link', 'format', 'location', 'participants'
         ]));
 
-        return ApiResponse::success('Event actualizado correctamente', $event);
-    }
-
-    /** 🟠 Alternar entre público y archivado */
-    public function toggleStatus($id, Request $request)
-    {
-        $event = Event::find($id);
-
-        if (!$event) {
-            return ApiResponse::notFound('Event no encontrado');
-        }
-
-        $auth = $request->user();
-
-        if ($auth->id !== $event->author_id && $auth->role !== 'admin') {
-            return ApiResponse::unauthorized('No autorizado');
-        }
-
-        $event->status = $event->status === 'publico' ? 'archivado' : 'publico';
-        $event->save();
-
-        return ApiResponse::success('Estado del event actualizado correctamente', $event);
-    }
-
-    /** 🔴 Eliminar permanentemente un event */
-    public function destroy($id, Request $request)
-    {
-        $event = Event::find($id);
-
-        if (!$event) {
-            return ApiResponse::notFound('Event no encontrado');
-        }
-
-        $auth = $request->user();
-
-        if ($auth->id !== $event->author_id && $auth->role !== 'admin') {
-            return ApiResponse::unauthorized('No autorizado');
-        }
-
-        $event->delete();
-
-        return ApiResponse::success('Event eliminado permanentemente');
+        return ApiResponse::success('Evento actualizado correctamente', $event);
     }
 }

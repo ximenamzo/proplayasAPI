@@ -38,7 +38,7 @@ class NodeController extends Controller
 
         // Paginación
         $perPage = 20;
-        $nodes = $query->orderBy('name')->paginate($perPage)->appends($request->query());
+        $nodes = $query->orderBy('id')->paginate($perPage)->appends($request->query());
 
         // Estructura de respuesta con datos + meta paginación
         return ApiResponse::success('Lista de nodos obtenida', $nodes->items(), [

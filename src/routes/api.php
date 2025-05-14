@@ -16,11 +16,16 @@ use App\Http\Controllers\UserController;
 use App\Http\Middleware\JWTMiddleware;
 use App\Http\Controllers\PublicationController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\BookController;
+use App\Http\Controllers\SeriesController;
+use App\Http\Controllers\NewsController;
+use App\Http\Controllers\ProjectController;
 use App\Services\MailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Models\Role;
@@ -222,45 +227,58 @@ Route::prefix('collaborators')->group(function () {
 });
 
 /**
- * 🔹 CRUDs DE CONTENIDO (PUBLICACIONES, LIBROS, WEBSERIES, eventS, NEWS)  
+ * 🔹 CRUDs DE CONTENIDO (PUBLICACIONES, LIBROS, WEBSERIES, EVENTS, NEWS, PROJECTS)
  * Aquí van las rutas para manejar contenido publicado en la plataforma.
  */
 
 /** CRUD: PUBLICACIONES (boletines, guías, artículos) */
 //Route::get('/publications', [PublicationController::class, 'index']); // público y usuarios logueados
-Route::prefix('publications')->group(function () {
-    Route::get('/', [PublicationController::class, 'index']); // público o autenticado
-    Route::middleware('jwt.auth')->get('/own', [PublicationController::class, 'ownPublications']); // dashboard propio
-});
+// Route::prefix('publications')->group(function () {
+//     Route::get('/', [PublicationController::class, 'index']); // público o autenticado
+//     Route::middleware('jwt.auth')->get('/own', [PublicationController::class, 'ownPublications']); // dashboard propio
+// });
+
+// Route::prefix('publication')->group(function () {
+//     Route::middleware('jwt.auth')->group(function () {
+//         Route::post('/{id}/upload-cover-image', [PublicationController::class, 'uploadCoverImage']); // subir imagen de portada
+//         Route::post('/{id}/upload-file', [PublicationController::class, 'uploadFile']); // subir archivo adjunto
+
+//         Route::post('/', [PublicationController::class, 'store']); // crear
+//         Route::put('/{id}/toggle-status', [PublicationController::class, 'toggleStatus']); // alternar público/archivado
+//         Route::put('/{id}', [PublicationController::class, 'update']); // editar
+//         Route::delete('/{id}', [PublicationController::class, 'destroy']); // eliminación permanente
+//     });
+
+//     Route::get('/{id}', [PublicationController::class, 'show']); // ver detalle
+// });
 
 
-Route::prefix('publication')->group(function () {
-
-    Route::middleware('jwt.auth')->group(function () {
-        Route::post('/{id}/upload-cover-image', [PublicationController::class, 'uploadCoverImage']); // subir imagen de portada
-        Route::post('/{id}/upload-file', [PublicationController::class, 'uploadFile']); // subir archivo adjunto
-
-        Route::post('/', [PublicationController::class, 'store']); // crear
-        Route::put('/{id}/toggle-status', [PublicationController::class, 'toggleStatus']); // alternar público/archivado
-        Route::put('/{id}', [PublicationController::class, 'update']); // editar
-        Route::delete('/{id}', [PublicationController::class, 'destroy']); // eliminación permanente
+function contentRoutes(string $prefix, string $controller)
+{
+    Route::prefix($prefix)->group(function () use ($controller) {
+        Route::get('/', [$controller, 'index']);
+        Route::middleware('jwt.auth')->get('/own', [$controller, 'own']);
     });
 
-    Route::get('/{id}', [PublicationController::class, 'show']); // ver detalle
-});
+    Route::prefix(Str::singular($prefix))->group(function () use ($controller) {
+        Route::middleware('jwt.auth')->group(function () use ($controller) {
+            Route::post('/{id}/upload-cover-image', [$controller, 'uploadCoverImage']);
+            Route::post('/{id}/upload-file', [$controller, 'uploadFile']);
 
+            Route::post('/', [$controller, 'store']);
+            Route::put('/{id}/toggle-status', [$controller, 'toggleStatus']);
+            Route::put('/{id}', [$controller, 'update']);
+            Route::delete('/{id}', [$controller, 'destroy']);
+        });
 
-/** CRUD: EVENTOS (webinars, charlas, sesiones) */
-Route::get('/events', [EventController::class, 'index']); // público y usuarios logueados
-
-Route::prefix('event')->group(function () {
-
-    Route::middleware('jwt.auth')->group(function () {
-        Route::post('/', [EventController::class, 'store']); // crear
-        Route::put('/{id}/toggle-status', [EventController::class, 'toggleStatus']); // alternar público/archivado
-        Route::put('/{id}', [EventController::class, 'update']); // editar
-        Route::delete('/{id}', [EventController::class, 'destroy']); // eliminación permanente
+        Route::get('/{id}', [$controller, 'show']);
     });
-    
-    Route::get('/{id}', [EventController::class, 'show']); // ver detalle
-});
+}
+
+// Llamadas a la función centralizada
+contentRoutes('publications', PublicationController::class);
+contentRoutes('events', EventController::class);
+contentRoutes('books', BookController::class);
+contentRoutes('series', SeriesController::class);
+contentRoutes('news-posts', NewsController::class);
+contentRoutes('projects', ProjectController::class);

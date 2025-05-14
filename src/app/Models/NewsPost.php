@@ -22,6 +22,10 @@ class NewsPost extends Model
         'status',
     ];
 
+    protected $casts = [
+        'tags' => 'array',
+    ];
+
     public function author()
     {
         return $this->belongsTo(User::class, 'author_id');

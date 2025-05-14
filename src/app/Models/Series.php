@@ -13,6 +13,7 @@ class Series extends Model
         'title',
         'url',
         'author_id',
+        'description',
         'file_path',
         'cover_image',
         'status',
