@@ -52,6 +52,13 @@ php artisan migrate --seed
 ```
 📌 Esto **creará las tablas** y **agregará los roles básicos** (`admin`, `node_leader`, `member`).
 
+
+En caso de que ya se tengan las migraciones y hay actualizaciones, ejecutar:
+```bash
+php artisan migrate:fresh --seed
+```
+⚠️ PRECAUCIÓN: NO USAR EN PRODUCCIÓN. Esto **borrará todas las migraciones** y **eliminará los DATOS de la base de datos**.
+
 ### **8️⃣ Limpiar cachés y reiniciar Laravel (opcional)**
 ```bash
 php artisan cache:clear
@@ -97,35 +104,3 @@ sudo lsof -i :8080
 sudo kill -9 <PID>
 ```
 (O detener el servicio en conflicto, por ejemplo: `sudo systemctl stop jenkins.service`)
-
----
-
-## **🔑 Autenticación y Pruebas de API**
-📌 **Crear un usuario:**
-```bash
-curl -X POST "http://localhost:8080/api/register" \
-     -H "Content-Type: application/json" \
-     -d '{"name":"Ximena", "email":"xime@example.com", "password":"12345678", "role":"admin"}'
-```
-
-📌 **Iniciar sesión y obtener token:**
-```bash
-curl -X POST "http://localhost:8080/api/login" \
-     -H "Content-Type: application/json" \
-     -d '{"email":"xime@example.com", "password":"12345678"}'
-```
-✅ **Guarda el token** que devuelve esta petición.
-
-📌 **Acceder al Dashboard del Admin (requiere token):**
-```bash
-curl -X GET "http://localhost:8080/api/admin-dashboard" \
-     -H "Authorization: Bearer TU_TOKEN_AQUI"
-```
-
-📌 **Cerrar sesión (requiere token):**
-```bash
-curl -X POST "http://localhost:8080/api/logout" \
-     -H "Authorization: Bearer TU_TOKEN_AQUI"
-```
-
----

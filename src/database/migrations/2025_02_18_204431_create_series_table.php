@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('url');
             $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
+            $table->text('description')->nullable();
             $table->string('file_path')->nullable();
             $table->string('cover_image')->nullable();
             $table->enum('status', ['publico', 'archivado'])->default('publico');

@@ -49,7 +49,7 @@ class BookController extends BaseContentController
     
             $book = Book::create([
                 'title' => $request->title,
-                'author' => $request->book_author,
+                'book_author' => $request->book_author,
                 'publication_date' => $request->publication_date,
                 'isbn' => $request->isbn,
                 'description' => $request->description,
