@@ -18,7 +18,7 @@ services:
     image: nginx:alpine
     container_name: proplayas_nginx
     ports:
-      - "8081:80"
+      - "8888:80"
     volumes:
       - ./src:/var/www/html
       - ./src/public:/var/www/html/public
