@@ -25,7 +25,10 @@ class JWTMiddleware
     {
         $token = $request->bearerToken();
 
-        if (!$token) {
+        if (!$token && $request->routeIs('test')) {
+            // Es ruta pública, continuar
+            return $next($request);
+        } else if (!$token) {
             return ApiResponse::unauthenticated('Token not provided', 401);
         }
 
