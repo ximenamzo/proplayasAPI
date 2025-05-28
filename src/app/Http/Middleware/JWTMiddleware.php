@@ -25,7 +25,7 @@ class JWTMiddleware
     {
         $token = $request->bearerToken();
 
-        if (!$token) {
+        if (!$token || trim($token) === '') {
             return $next($request);
             //return ApiResponse::unauthenticated('Token not provided', 401);
         }
