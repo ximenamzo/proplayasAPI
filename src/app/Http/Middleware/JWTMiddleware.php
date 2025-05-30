@@ -25,8 +25,9 @@ class JWTMiddleware
     {
         $token = $request->bearerToken();
 
-        if (!$token) {
-            return ApiResponse::unauthenticated('Token not provided', 401);
+        if (!$token || trim($token) === '') {
+            return $next($request);
+            //return ApiResponse::unauthenticated('Token not provided', 401);
         }
 
         try {
@@ -50,12 +51,12 @@ class JWTMiddleware
             return ApiResponse::unauthenticated('Token not valid yet', 401);
         } catch (UnexpectedValueException $e) {
             return ApiResponse::unauthenticated('Token structure invalid', 401);
-        } catch (\Throwable $e) {
-            Log::error("JWT decoding error: " . $e->getMessage());
-            return ApiResponse::unauthenticated('Token invalid', 401);
         } catch (Exception $e) {
             Log::error("Error al decodificar el token: " . $e->getMessage());
             return ApiResponse::unauthenticated('Token invalid', 401);
+        } catch (\Throwable $e) {
+            Log::warning("Token inválido: " . $e->getMessage());
+            return ApiResponse::unauthenticated('Token inválido o no autorizado');
         }
 
         return $next($request);

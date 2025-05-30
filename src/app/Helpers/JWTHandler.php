@@ -4,18 +4,19 @@ namespace App\Helpers;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
-use Illuminate\Support\Facades\Config;
 use App\Models\Session;
-use App\Models\Node;
 
 class JWTHandler
 {
     public static function createToken($user, $request = null, $isInvitation = false)
     {
+        $secret = env('JWT_SECRET');
+        $ttl = env('JWT_TTL', 60); 
+
         $payload = [
             'iss' => env('APP_URL', 'http://localhost'),
             'iat' => time(),
-            'exp' => time() + (Config::get('jwt.ttl') * 60)
+            'exp' => time() + ($ttl * 60)
         ];
 
         // Verificar si es un usuario registrado o una invitación
@@ -26,7 +27,7 @@ class JWTHandler
 
             // Si es una sesión real, se guarda en BD
             if ($request) {
-                $token = JWT::encode($payload, Config::get('jwt.secret'), 'HS256');
+                $token = JWT::encode($payload, $secret, 'HS256');
 
                 // 🔹 INVALIDAR SESIONES PREVIAS DE MISMO USUARIO + MISMA IP Y USER AGENT
                 Session::where('user_id', $user->id)
@@ -61,7 +62,7 @@ class JWTHandler
                 $payload['node_id'] = $user->node_id;
             }
 
-            return JWT::encode($payload, Config::get('jwt.secret'), 'HS256');
+            return JWT::encode($payload, $secret, 'HS256');
         }
 
         throw new \Exception("Invalid data provided for token generation.");
@@ -69,7 +70,7 @@ class JWTHandler
 
     public static function decodeToken($token)
     {
-        return JWT::decode($token, new Key(Config::get('jwt.secret'), 'HS256'));
+        return JWT::decode($token, new Key(env('JWT_SECRET'), 'HS256'));
     }
 
     public static function invalidateToken($token)
