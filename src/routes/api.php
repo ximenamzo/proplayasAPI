@@ -145,6 +145,8 @@ Route::prefix('node')->group(function () {
         Route::post('/upload-profile-picture', [NodeController::class, 'uploadProfilePicture']);
         Route::post('/upload-memorandum', [NodeController::class, 'uploadMemorandum']);
         Route::put('/{id}', [NodeController::class, 'update']); // Node leader edita su nodo
+        Route::put('/{id}/toggle-status', [NodeController::class, 'toggleStatus']); // Admin activa/desactiva nodo
+
         Route::delete('/{id}', [NodeController::class, 'destroy']); // Admin elimina nodo (soft delete)
         Route::put('/{id}/reassign-leader', [NodeController::class, 'reassignLeader']); // Admin reasigna líder
         

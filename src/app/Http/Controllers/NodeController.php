@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Node;
 use App\Models\Member;
 use App\Helpers\ApiResponse;
+use App\Helpers\JWTHandler;
 use App\Services\FileUploadService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
@@ -17,16 +18,31 @@ class NodeController extends Controller
     /** 🟢 Ver todos los nodos (público o autenticado) */
     public function index(Request $request)
     {
-        $auth = $request->user(); // null si no está autenticado
+        $auth = null;
 
-        $query = Node::select('id', 'code', 'type', 'name', 'city', 'country', 'members_count', 'joined_in');
+        // Detectar token manualmente (ya que la ruta es pública)
+        $token = $request->bearerToken();
 
-        // Si no hay usuario autenticado, mostrar solo activos
-        if (!$auth) {
+        if ($token) {
+            try {
+                $decoded = JWTHandler::decodeToken($token);
+                $auth = (object)[
+                    'id' => $decoded->sub ?? null,
+                    'role' => $decoded->role ?? null
+                ];
+            } catch (\Exception $e) {
+                \Log::warning('Token inválido al intentar acceder a /nodes', ['message' => $e->getMessage()]);
+            }
+        }
+
+        $query = Node::select('id', 'code', 'type', 'name', 'city', 'country', 'members_count', 'joined_in', 'status');
+
+        // Si no hay auth o no es admin => solo mostrar nodos activos
+        if (!$auth || $auth->role !== 'admin') {
             $query->where('status', 'activo');
         }
 
-        // Filtro de búsqueda (por nombre, código o ciudad)
+        // Filtro de búsqueda
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
@@ -36,11 +52,9 @@ class NodeController extends Controller
             });
         }
 
-        // Paginación
         $perPage = 200;
         $nodes = $query->orderBy('id')->paginate($perPage)->appends($request->query());
 
-        // Estructura de respuesta con datos + meta paginación
         return ApiResponse::success('Lista de nodos obtenida', $nodes->items(), [
             'current_page' => $nodes->currentPage(),
             'per_page' => $nodes->perPage(),
@@ -117,7 +131,9 @@ class NodeController extends Controller
 
         Log::info("Nodo actualizado correctamente", ['node_id' => $node->id]);
 
-        return ApiResponse::success('Nodo actualizado correctamente', $node);
+        return ApiResponse::success('Nodo actualizado correctamente', $node->only([
+            'id', 'code', 'type', 'name', 'city', 'country', 'status', 'joined_in', 'profile_picture'
+        ]));
     }
 
     /** 🟡 Editar imagen de perfil de un nodo */
@@ -199,6 +215,27 @@ class NodeController extends Controller
                 'debug' => $e->getMessage()
             ]);
         }
+    }
+    
+    /** 🟠 Admin activa/desactiva nodo */
+    public function toggleStatus(Request $request, $id)
+    {
+        $user = $request->user();
+        if ($user->role !== 'admin') {
+            return ApiResponse::unauthorized('Solo los administradores pueden activar o desactivar nodos');
+        }
+
+        $node = Node::find($id);
+        if (!$node) {
+            return ApiResponse::notFound('Nodo no encontrado', 404);
+        }
+
+        $node->status = $node->status === 'activo' ? 'inactivo' : 'activo';
+        $node->save();
+
+        return ApiResponse::success('Estado del nodo actualizado correctamente', $node->only([
+            'id', 'code', 'name', 'status'
+        ]));
     }
 
     

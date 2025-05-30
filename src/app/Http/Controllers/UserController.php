@@ -173,6 +173,7 @@ class UserController extends Controller
     
             if ($node->leader) {
                 $results->push([
+                    'user_id' => $node->leader->id,
                     'name' => $node->leader->name,
                     'email' => $node->leader->email,
                     'role' => 'node_leader',
@@ -185,6 +186,8 @@ class UserController extends Controller
             foreach ($node->members as $member) {
                 if ($member->user && $member->user->id !== $leaderId) {
                     $results->push([
+                        //'id' => $member->id,
+                        'user_id' => $member->user->id,
                         'name' => $member->user->name,
                         'email' => $member->user->email,
                         'role' => 'member',
@@ -293,7 +296,7 @@ class UserController extends Controller
     }
 
 
-    /** 🟡 Subir imagen de perfil de usuario */
+    /** 🟡 Actualizar imagen de perfil de usuario */
     public function uploadProfilePicture(Request $request)
     {
         try {
