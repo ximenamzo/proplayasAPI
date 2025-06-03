@@ -173,7 +173,7 @@ class UserController extends Controller
     
             if ($node->leader) {
                 $results->push([
-                    'user_id' => $node->leader->id,
+                    'id' => $node->leader->id,
                     'name' => $node->leader->name,
                     'email' => $node->leader->email,
                     'role' => 'node_leader',
@@ -187,7 +187,7 @@ class UserController extends Controller
                 if ($member->user && $member->user->id !== $leaderId) {
                     $results->push([
                         //'id' => $member->id,
-                        'user_id' => $member->user->id,
+                        'id' => $member->user->id,
                         'name' => $member->user->name,
                         'email' => $member->user->email,
                         'role' => 'member',
