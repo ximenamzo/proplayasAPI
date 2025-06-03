@@ -251,9 +251,9 @@ class NodeController extends Controller
             return ApiResponse::notFound('Nodo no encontrado', 404);
          }
  
-         $node->update(['status' => 'inactivo']);
- 
-         return ApiResponse::success('Nodo desactivado correctamente', $node);
+         $node->delete();
+
+         return ApiResponse::success('Nodo eliminado correctamente', $node);
      }
  
      /** 🟠 Admin reasigna el líder de un nodo */
