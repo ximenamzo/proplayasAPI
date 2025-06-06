@@ -18,7 +18,7 @@ services:
     image: nginx:alpine
     container_name: proplayas_nginx
     ports:
-      - "8888:80"
+      - "8080:80"
     volumes:
       - ./src:/var/www/html
       - ./src/public:/var/www/html/public
@@ -30,7 +30,7 @@ services:
     image: mysql:8
     container_name: proplayas_db
     ports:
-      - "3307:3306"
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: proplayas
