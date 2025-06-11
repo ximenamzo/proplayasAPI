@@ -57,9 +57,11 @@ class SeriesController extends BaseContentController
     public function update($id, Request $request)
     {
         $series = Series::find($id);
+
         if (!$series) return ApiResponse::notFound('Serie no encontrada');
 
         $auth = $request->user();
+
         if ($series->author_id !== $auth->id && $auth->role !== 'admin') {
             return ApiResponse::unauthorized('No autorizado');
         }
@@ -73,5 +75,9 @@ class SeriesController extends BaseContentController
         $series->update($request->only([
             'title', 'url', 'description'
         ]));
+
+        $updatedSeries = Series::with(['author:id,name,username,email,role,degree,postgraduate'])->find($series->id);
+
+        return ApiResponse::success('Serie actualizada correctamente', $updatedSeries);
     }
 }

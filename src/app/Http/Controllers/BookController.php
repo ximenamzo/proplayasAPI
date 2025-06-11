@@ -94,6 +94,8 @@ class BookController extends BaseContentController
             'title', 'book_author', 'publication_date', 'isbn', 'description', 'link'
         ]));
 
-        return ApiResponse::success('Libro actualizado correctamente', $book);
+        $updatedBook = Book::with(['author:id,name,username,email,role,degree,postgraduate'])->find($id);
+
+        return ApiResponse::success('Libro actualizado correctamente', $updatedBook);
     }
 }
