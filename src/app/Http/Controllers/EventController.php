@@ -102,6 +102,8 @@ class EventController extends BaseContentController
             'title', 'type', 'description', 'date', 'link', 'format', 'location', 'participants'
         ]));
 
-        return ApiResponse::success('Evento actualizado correctamente', $event);
+        $updatedEvent = Event::with(['author:id,name,username,email,role,degree,postgraduate'])->find($id);
+
+        return ApiResponse::success('Evento actualizado correctamente', $updatedEvent);
     }
 }

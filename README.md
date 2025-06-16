@@ -39,14 +39,16 @@ composer install
 ```bash
 cp .env.example .env
 ```
-Luego, edita el archivo **.env** si es necesario.
+Luego, edita el archivo **.env** si es necesario ⚠️(ADMIN_PASSWORD).
 
-### **6️⃣ Generar la clave de Laravel**
+### **6️⃣ Generar la clave de Laravel y la clave de JWT**
 ```bash
 php artisan key:generate
+php artisan jwt:secret
 ```
 
 ### **7️⃣ Ejecutar migraciones y poblar la base de datos**
+‼️ Cambia la contraseña de ADMIN_PASSWORD antes de ejecutar los seeders
 ```bash
 php artisan migrate --seed
 ```

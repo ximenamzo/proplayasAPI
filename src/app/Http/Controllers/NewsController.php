@@ -83,6 +83,8 @@ class NewsController extends BaseContentController
             'title', 'content', 'category', 'tags'
         ]));
 
-        return ApiResponse::success('Noticia actualizada correctamente', $newsPost);
+        $updatedNewsPost = NewsPost::with(['author:id,name,username,email,role,degree,postgraduate'])->find($newsPost->id);
+
+        return ApiResponse::success('Noticia actualizada correctamente', $updatedNewsPost);
     }
 }

@@ -90,7 +90,7 @@ abstract class BaseContentController extends Controller
         $authId = $auth->sub ?? $auth->id ?? null;
         $isAdmin = $auth?->role === 'admin';
 
-        $item = ($this->modelClass)::with(['author:id,name,username,email,role,status'])->find($id);
+        $item = ($this->modelClass)::with(['author:id,name,username,email,role,degree,postgraduate'])->find($id);
         if (!$item) return ApiResponse::notFound("{$this->type} no encontrado");
 
         if ($item->status === 'archivado' && !$isAdmin && $item->author_id !== $authId) {

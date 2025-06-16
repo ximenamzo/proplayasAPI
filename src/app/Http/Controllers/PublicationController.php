@@ -98,6 +98,8 @@ class PublicationController extends BaseContentController
 
         $pub->update($request->only(['title', 'description', 'link', 'doi', 'issn']));
 
-        return ApiResponse::success('Publicación actualizada correctamente', $pub);
+        $updatedPublication = Publication::with(['author:id,name,username,email,role,degree,postgraduate'])->find($pub->id);
+
+        return ApiResponse::success('Publicación actualizada correctamente', $updatedPublication);
     }
 }

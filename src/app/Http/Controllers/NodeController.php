@@ -52,7 +52,7 @@ class NodeController extends Controller
             });
         }
 
-        $perPage = 200;
+        $perPage = 20;
         $nodes = $query->orderBy('id')->paginate($perPage)->appends($request->query());
 
         return ApiResponse::success('Lista de nodos obtenida', $nodes->items(), [
@@ -131,10 +131,11 @@ class NodeController extends Controller
 
         Log::info("Nodo actualizado correctamente", ['node_id' => $node->id]);
 
-        return ApiResponse::success('Nodo actualizado correctamente', $node->only([
-            'id', 'code', 'type', 'name', 'city', 'country', 'status', 'joined_in', 'profile_picture'
-        ]));
+        $updatedNode = Node::with(['leader:id,name,email,degree,postgraduate'])->find($node->id);
+
+        return ApiResponse::success('Nodo actualizado correctamente', $updatedNode);
     }
+
 
     /** 🟡 Editar imagen de perfil de un nodo */
     public function uploadProfilePicture(Request $request)

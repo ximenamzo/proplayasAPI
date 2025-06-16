@@ -96,6 +96,8 @@ class ProjectController extends BaseContentController
             'title', 'description', 'date', 'location', 'link', 'participants'
         ]));
 
-        return ApiResponse::updated('Proyecto actualizado correctamente', $project);
+        $updatedProject = Project::with(['author:id,name,username,email,role,degree,postgraduate'])->find($project->id);
+
+        return ApiResponse::success('Proyecto actualizado correctamente', $updatedProject);
     }
 }
