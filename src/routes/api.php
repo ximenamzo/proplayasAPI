@@ -254,7 +254,7 @@ Route::prefix('collaborators')->group(function () {
 
         Route::get('/{id}', [$controller, 'show']);
     });
-}*/
+}
 
 // Llamadas a la función centralizada
 contentRoutes('publications', PublicationController::class);
@@ -262,4 +262,11 @@ contentRoutes('events', EventController::class);
 contentRoutes('books', BookController::class);
 contentRoutes('series', SeriesController::class);
 contentRoutes('news-posts', NewsController::class);
-contentRoutes('projects', ProjectController::class);
+contentRoutes('projects', ProjectController::class);*/
+
+Route::contentRoutes('publications', PublicationController::class);
+Route::contentRoutes('events', EventController::class);
+Route::contentRoutes('books', BookController::class);
+Route::contentRoutes('series', SeriesController::class);
+Route::contentRoutes('news-posts', NewsController::class);
+Route::contentRoutes('projects', ProjectController::class);
