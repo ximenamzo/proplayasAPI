@@ -234,7 +234,7 @@ Route::prefix('collaborators')->group(function () {
  * Aquí van las rutas para manejar contenido publicado en la plataforma.
  */
 
-function contentRoutes(string $prefix, string $controller)
+/*function contentRoutes(string $prefix, string $controller)
 {
     Route::prefix($prefix)->group(function () use ($controller) {
         Route::get('/', [$controller, 'index']);
@@ -254,7 +254,7 @@ function contentRoutes(string $prefix, string $controller)
 
         Route::get('/{id}', [$controller, 'show']);
     });
-}
+}*/
 
 // Llamadas a la función centralizada
 contentRoutes('publications', PublicationController::class);
